@@ -8,8 +8,9 @@ Current stage:
 - **Stage 2 backend foundation**: FastAPI API for accepting scanner JSON uploads, storing scans/findings, and serving future dashboard data.
 - **Stage 2 dashboard v0**: Next.js local dashboard for projects, scanner uploads, scans, findings, and filters.
 - **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
+- **Stage 4 Consent Event API v0**: append-only consent event ledger, dashboard view, and Node SDK wrapper.
 
-This repository does not include auth, billing, consent API, evidence report PDF generation, external integrations, automatic deletion across systems, email notifications, or deployment complexity yet.
+This repository does not include auth, billing, evidence report PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
 ## Privacy Guarantee
 
@@ -106,6 +107,7 @@ The backend lives in `backend/` and provides:
 - findings APIs with filters for risk level, PII type, source type, and scan ID
 - paginated findings responses for dashboard tables
 - DSR Inbox APIs for User Data Requests, notes, and audit events
+- Consent Event APIs for append-only granted/withdrawn events, current status lookup, and event-count summaries
 
 The scanner-to-backend flow is:
 
@@ -194,6 +196,57 @@ DSR Inbox routes:
 Request types are `access`, `correction`, `deletion`, `consent_withdrawal`, and `grievance`. Statuses are `new`, `verifying`, `in_progress`, `completed`, and `rejected`.
 
 DSR Inbox v0 is workflow tracking only. It does not implement auth, automatic deletion, email notifications, identity verification automation, or evidence report PDF generation.
+
+## Consent Event API
+
+Consent Event API v0 is an append-only developer API. Customers record consent events with `external_user_id`, `purpose`, `status`, `notice_version`, optional `source`, `occurred_at`, and optional metadata.
+
+Backend endpoints:
+
+- `POST /projects/{project_id}/consent-events`
+- `GET /projects/{project_id}/consent-events`
+- `GET /projects/{project_id}/consent-status`
+- `GET /projects/{project_id}/consent-summary`
+
+Dashboard route:
+
+- `/projects/<PROJECT_ID>/consent`
+
+Privacy rule: consent events use `external_user_id` only. They do not require email, phone, or name.
+
+Consent summary counts are event counts in v0, not unique-user counts.
+
+## Node SDK
+
+The TypeScript SDK lives in `sdk/node/`.
+
+```bash
+cd sdk/node
+npm install --no-audit --no-fund
+npm run typecheck
+npm test
+npm run build
+```
+
+Basic usage:
+
+```ts
+import { DpdpPrivacyOpsClient } from "@dpdp-privacyops/node";
+
+const client = new DpdpPrivacyOpsClient({
+  apiBaseUrl: "http://localhost:8000",
+  projectId: "project-uuid"
+});
+
+await client.trackConsent({
+  externalUserId: "usr_123",
+  purpose: "marketing_whatsapp",
+  noticeVersion: "v2.1",
+  source: "web_signup"
+});
+```
+
+API key enforcement is not implemented yet; the SDK accepts `apiKey` for future compatibility.
 
 ## Output Schema
 

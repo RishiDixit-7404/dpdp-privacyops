@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import data_requests, findings, health, projects, scans
+from app.routers import consent, data_requests, findings, health, projects, scans
 
 
 settings = get_settings()
@@ -26,6 +26,7 @@ app.include_router(projects.router)
 app.include_router(scans.router)
 app.include_router(findings.router)
 app.include_router(data_requests.router)
+app.include_router(consent.router)
 
 
 @app.exception_handler(RequestValidationError)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Literal
@@ -57,6 +58,11 @@ class DataRequestAuditEventType(StrEnum):
     due_date_changed = "due_date_changed"
     completed = "completed"
     rejected = "rejected"
+
+
+class ConsentStatus(StrEnum):
+    granted = "granted"
+    withdrawn = "withdrawn"
 
 
 def validate_email_for_mvp(value: str) -> str:
@@ -296,3 +302,100 @@ class PublicDataRequestConfirmation(BaseModel):
     request_id: UUID
     status: Literal["new"]
     message: str
+
+
+class ConsentEventCreate(BaseModel):
+    external_user_id: str = Field(min_length=1, max_length=255)
+    purpose: str = Field(min_length=1, max_length=255)
+    status: ConsentStatus
+    notice_version: str = Field(min_length=1, max_length=64)
+    source: str | None = Field(default=None, max_length=255)
+    occurred_at: datetime
+    metadata: dict[str, object] | None = None
+
+    @field_validator("external_user_id", "purpose", "notice_version")
+    @classmethod
+    def required_strings_cannot_be_blank(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("field cannot be empty")
+        return normalized
+
+    @field_validator("occurred_at")
+    @classmethod
+    def occurred_at_must_be_timezone_aware(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("occurred_at must be timezone-aware")
+        return value
+
+    @field_validator("metadata")
+    @classmethod
+    def metadata_must_be_reasonable_size(cls, value: dict[str, object] | None) -> dict[str, object] | None:
+        if value is None:
+            return value
+        encoded = json.dumps(value, separators=(",", ":"), sort_keys=True)
+        if len(encoded.encode("utf-8")) > 10 * 1024:
+            raise ValueError("metadata must not exceed 10KB")
+        return value
+
+
+class ConsentEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    project_id: UUID
+    external_user_id: str
+    purpose: str
+    status: ConsentStatus
+    notice_version: str
+    source: str | None
+    occurred_at: datetime
+    metadata: dict[str, object] | None = Field(default=None, validation_alias="event_metadata")
+    created_at: datetime
+
+    @field_validator("occurred_at", "created_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ConsentEventListResponse(BaseModel):
+    items: list[ConsentEventResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class ConsentStatusResponse(BaseModel):
+    project_id: UUID
+    external_user_id: str
+    purpose: str
+    current_status: ConsentStatus
+    notice_version: str
+    source: str | None
+    occurred_at: datetime
+    latest_event_id: UUID
+
+    @field_validator("occurred_at", mode="before")
+    @classmethod
+    def occurred_at_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ConsentPurposeSummary(BaseModel):
+    purpose: str
+    granted_count: int
+    withdrawn_count: int
+    latest_event_at: datetime | None
+
+    @field_validator("latest_event_at", mode="before")
+    @classmethod
+    def latest_event_at_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ConsentSummaryResponse(BaseModel):
+    total_events: int
+    granted_count: int
+    withdrawn_count: int
+    purposes: list[ConsentPurposeSummary]

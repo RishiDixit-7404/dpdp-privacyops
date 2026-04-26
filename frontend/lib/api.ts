@@ -1,4 +1,10 @@
 import type {
+  ConsentEvent,
+  ConsentEventCreate,
+  ConsentEventFilters,
+  ConsentEventListResponse,
+  ConsentStatusResponse,
+  ConsentSummaryResponse,
   DataRequest,
   DataRequestCreateInput,
   DataRequestDetail,
@@ -201,4 +207,43 @@ export function addDataRequestNote(requestId: string, payload: DataRequestNoteCr
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export function createConsentEvent(projectId: string, payload: ConsentEventCreate): Promise<ConsentEvent> {
+  return request<ConsentEvent>(`/projects/${projectId}/consent-events`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function getConsentEvents(
+  projectId: string,
+  filters: ConsentEventFilters = {}
+): Promise<ConsentEventListResponse> {
+  return request<ConsentEventListResponse>(
+    `/projects/${projectId}/consent-events${queryString({
+      external_user_id: filters.external_user_id,
+      purpose: filters.purpose,
+      status: filters.status,
+      limit: filters.limit ?? 100,
+      offset: filters.offset ?? 0
+    })}`
+  );
+}
+
+export function getConsentStatus(
+  projectId: string,
+  externalUserId: string,
+  purpose: string
+): Promise<ConsentStatusResponse> {
+  return request<ConsentStatusResponse>(
+    `/projects/${projectId}/consent-status${queryString({
+      external_user_id: externalUserId,
+      purpose
+    })}`
+  );
+}
+
+export function getConsentSummary(projectId: string): Promise<ConsentSummaryResponse> {
+  return request<ConsentSummaryResponse>(`/projects/${projectId}/consent-summary`);
 }

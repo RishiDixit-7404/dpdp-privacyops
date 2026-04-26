@@ -8,6 +8,7 @@ import { RiskBadge } from "@/components/findings/risk-badge";
 import { FindingsTable } from "@/components/findings/findings-table";
 import { DataRequestStatusBadge } from "@/components/data-requests/data-request-status-badge";
 import { DataRequestTypeBadge } from "@/components/data-requests/data-request-type-badge";
+import { ConsentStatusBadge } from "@/components/consent/consent-status-badge";
 import type { Finding } from "@/lib/types";
 
 const finding: Finding = {
@@ -56,6 +57,12 @@ describe("dashboard basics", () => {
 
     expect(screen.getByText("In progress")).toBeInTheDocument();
     expect(screen.getByText("Consent withdrawal")).toBeInTheDocument();
+  });
+
+  it("renders consent status badges", () => {
+    render(<ConsentStatusBadge status="granted" />);
+
+    expect(screen.getByText("Granted")).toBeInTheDocument();
   });
 
   it("renders a finding without showing unsupported internal fields", () => {

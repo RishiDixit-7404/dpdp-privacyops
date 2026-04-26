@@ -1,8 +1,8 @@
 # DPDP PrivacyOps Backend
 
-FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It now also includes DSR Inbox v0 for tracking User Data Requests.
+FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0 and Consent Event API v0.
 
-It does not include auth, billing, consent APIs, evidence reports, automatic deletion across systems, email notifications, external integrations, or frontend code.
+It does not include auth, billing, evidence reports, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
 
 Auth is intentionally not implemented yet. These APIs are the local/backend foundation for the upcoming dashboard and should not be exposed publicly without an auth layer.
 
@@ -113,6 +113,10 @@ When `BACKEND_TEST_DATABASE_URL` is set, the test suite creates and drops the ap
 - `PATCH /data-requests/{request_id}`
 - `POST /data-requests/{request_id}/notes`
 - `POST /public/projects/{project_id}/data-requests`
+- `POST /projects/{project_id}/consent-events`
+- `GET /projects/{project_id}/consent-events`
+- `GET /projects/{project_id}/consent-status`
+- `GET /projects/{project_id}/consent-summary`
 
 ## Create Project
 
@@ -258,6 +262,58 @@ curl -X POST http://127.0.0.1:8000/public/projects/<PROJECT_ID>/data-requests \
 
 The public endpoint only creates a request and returns a minimal confirmation. It does not expose project data or request lists.
 
+## Consent Event APIs
+
+Consent Event API v0 is an append-only ledger. There are no update or delete APIs for consent events.
+
+Consent event statuses:
+
+- `granted`
+- `withdrawn`
+
+Record a consent event:
+
+```bash
+curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "external_user_id": "usr_123",
+    "purpose": "marketing_whatsapp",
+    "status": "granted",
+    "notice_version": "v2.1",
+    "source": "web_signup",
+    "occurred_at": "2026-04-26T10:30:00+05:30",
+    "metadata": {
+      "ip_country": "IN",
+      "ui_surface": "signup_checkbox"
+    }
+  }'
+```
+
+List events:
+
+```bash
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events?external_user_id=usr_123&purpose=marketing_whatsapp&status=granted&limit=100&offset=0"
+```
+
+Check current consent status:
+
+```bash
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-status?external_user_id=usr_123&purpose=marketing_whatsapp"
+```
+
+Get admin summary:
+
+```bash
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-summary"
+```
+
+Consent summary counts are event counts in v0, not unique-user counts.
+
+Privacy rule: consent events use `external_user_id` only. The API does not ask for email, phone, or name. Optional metadata is capped at 10KB.
+
+Auth and API key enforcement are intentionally not implemented yet.
+
 ## Error Responses
 
 Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
@@ -265,7 +321,8 @@ Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
 - duplicate scanner scan ID: `409`
 - missing project or scan: `404`
 - invalid payloads or invalid enum filters: `422`
+- missing consent status: `404`
 
 ## Privacy Notes
 
-The backend stores scanner metadata and masked examples only. It does not call external APIs, does not send telemetry, and does not log raw scanner payload values.
+The backend stores scanner metadata and masked examples only for scanner uploads. Consent events are keyed by `external_user_id` and purpose; no raw email, phone, or name fields are required. It does not call external APIs, does not send telemetry, and does not log raw scanner or request payload values.

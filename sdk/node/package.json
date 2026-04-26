@@ -1,0 +1,25 @@
+{
+  "name": "@dpdp-privacyops/node",
+  "version": "0.1.0",
+  "description": "Node SDK for the DPDP PrivacyOps Consent Event API.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "20.11.30",
+    "typescript": "5.4.5",
+    "vitest": "1.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

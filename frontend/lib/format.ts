@@ -1,4 +1,4 @@
-import type { DataRequestStatus, DataRequestType, PiiType, RiskLevel, ScanType, SourceType } from "@/lib/types";
+import type { ConsentStatus, DataRequestStatus, DataRequestType, PiiType, RiskLevel, ScanType, SourceType } from "@/lib/types";
 
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
@@ -64,6 +64,8 @@ export const dataRequestTypeOptions: DataRequestType[] = [
   "grievance"
 ];
 
+export const consentStatusOptions: ConsentStatus[] = ["granted", "withdrawn"];
+
 export function dataRequestTypeLabel(value: DataRequestType): string {
   const labels: Record<DataRequestType, string> = {
     access: "Access",
@@ -82,6 +84,14 @@ export function dataRequestStatusLabel(value: DataRequestStatus): string {
     in_progress: "In progress",
     completed: "Completed",
     rejected: "Rejected"
+  };
+  return labels[value];
+}
+
+export function consentStatusLabel(value: ConsentStatus): string {
+  const labels: Record<ConsentStatus, string> = {
+    granted: "Granted",
+    withdrawn: "Withdrawn"
   };
   return labels[value];
 }

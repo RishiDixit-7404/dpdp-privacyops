@@ -86,6 +86,9 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/projects/${params.projectId}/consent`}>
+            <Button variant="secondary">Consent Events</Button>
+          </Link>
           <Link href={`/projects/${params.projectId}/requests`}>
             <Button variant="secondary">User Data Requests</Button>
           </Link>
@@ -105,6 +108,19 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
           </div>
           <Link href={`/projects/${params.projectId}/requests`}>
             <Button>Open request inbox</Button>
+          </Link>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Consent Events</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Record and verify purpose-based consent events with an append-only ledger.
+          </div>
+          <Link href={`/projects/${params.projectId}/consent`}>
+            <Button>Open consent ledger</Button>
           </Link>
         </CardContent>
       </Card>

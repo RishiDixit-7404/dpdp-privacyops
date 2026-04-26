@@ -4,7 +4,8 @@ const items = [
   { href: "/projects", label: "Projects" },
   { href: "/projects#scanner-upload", label: "Scanner Upload" },
   { href: "/projects#findings", label: "Findings" },
-  { href: "/projects", label: "Requests" }
+  { href: "/projects", label: "Requests" },
+  { href: "/projects", label: "Consent" }
 ];
 
 export function TopNav() {

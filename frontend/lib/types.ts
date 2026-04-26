@@ -12,6 +12,7 @@ export type DataRequestAuditEventType =
   | "due_date_changed"
   | "completed"
   | "rejected";
+export type ConsentStatus = "granted" | "withdrawn";
 
 export type PiiType =
   | "email"
@@ -191,4 +192,67 @@ export interface PublicDataRequestConfirmation {
   request_id: string;
   status: "new";
   message: string;
+}
+
+export interface ConsentEvent {
+  id: string;
+  project_id: string;
+  external_user_id: string;
+  purpose: string;
+  status: ConsentStatus;
+  notice_version: string;
+  source: string | null;
+  occurred_at: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ConsentEventCreate {
+  external_user_id: string;
+  purpose: string;
+  status: ConsentStatus;
+  notice_version: string;
+  source?: string | null;
+  occurred_at: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface ConsentEventFilters {
+  external_user_id?: string;
+  purpose?: string;
+  status?: ConsentStatus;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ConsentEventListResponse {
+  items: ConsentEvent[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ConsentStatusResponse {
+  project_id: string;
+  external_user_id: string;
+  purpose: string;
+  current_status: ConsentStatus;
+  notice_version: string;
+  source: string | null;
+  occurred_at: string;
+  latest_event_id: string;
+}
+
+export interface ConsentPurposeSummary {
+  purpose: string;
+  granted_count: number;
+  withdrawn_count: number;
+  latest_event_at: string | null;
+}
+
+export interface ConsentSummaryResponse {
+  total_events: number;
+  granted_count: number;
+  withdrawn_count: number;
+  purposes: ConsentPurposeSummary[];
 }

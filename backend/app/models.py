@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -24,6 +24,7 @@ DATA_REQUEST_AUDIT_EVENT_TYPES = (
     "completed",
     "rejected",
 )
+CONSENT_STATUSES = ("granted", "withdrawn")
 
 
 def utc_now() -> datetime:
@@ -57,6 +58,7 @@ class Project(Base):
     organization: Mapped[Organization] = relationship(back_populates="projects")
     scans: Mapped[list[Scan]] = relationship(back_populates="project", cascade="all, delete-orphan")
     data_requests: Mapped[list[DataRequest]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    consent_events: Mapped[list[ConsentEvent]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Scan(Base):
@@ -209,3 +211,38 @@ class DataRequestAuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     data_request: Mapped[DataRequest] = relationship(back_populates="audit_events")
+
+
+class ConsentEvent(Base):
+    __tablename__ = "consent_events"
+    __table_args__ = (
+        CheckConstraint("status in ('granted', 'withdrawn')", name="ck_consent_events_status"),
+        CheckConstraint("length(trim(external_user_id)) > 0", name="ck_consent_events_external_user_id_not_empty"),
+        CheckConstraint("length(trim(purpose)) > 0", name="ck_consent_events_purpose_not_empty"),
+        CheckConstraint("length(trim(notice_version)) > 0", name="ck_consent_events_notice_version_not_empty"),
+        Index(
+            "ix_consent_events_project_user_purpose_occurred",
+            "project_id",
+            "external_user_id",
+            "purpose",
+            "occurred_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    project_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    external_user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    purpose: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    notice_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    source: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    event_metadata: Mapped[dict[str, object] | None] = mapped_column("metadata", JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    project: Mapped[Project] = relationship(back_populates="consent_events")
