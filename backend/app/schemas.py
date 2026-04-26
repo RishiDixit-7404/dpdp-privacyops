@@ -399,3 +399,144 @@ class ConsentSummaryResponse(BaseModel):
     granted_count: int
     withdrawn_count: int
     purposes: list[ConsentPurposeSummary]
+
+
+class ReportProjectSummary(BaseModel):
+    id: UUID
+    name: str
+    description: str | None
+    organization_name: str
+    created_at: datetime
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def created_at_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReportScanSummary(BaseModel):
+    scan_count: int
+    latest_scan_id: UUID | None
+    latest_scan_source: str | None
+    latest_scan_type: str | None
+    latest_scan_generated_at: datetime | None
+
+    @field_validator("latest_scan_generated_at", mode="before")
+    @classmethod
+    def latest_scan_generated_at_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReportRiskSummary(BaseModel):
+    total_findings: int
+    counts_by_risk_level: dict[str, int]
+    critical_count: int
+    high_count: int
+    highest_risk_level: str | None
+
+
+class ReportDataInventorySummary(BaseModel):
+    counts_by_pii_type: dict[str, int]
+    counts_by_source_type: dict[str, int]
+    sources_scanned: list[str]
+    scan_types: list[str]
+    latest_scan_generated_at: datetime | None
+
+    @field_validator("latest_scan_generated_at", mode="before")
+    @classmethod
+    def latest_scan_generated_at_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReportTopRisk(BaseModel):
+    risk_level: RiskLevel
+    pii_type: str
+    source_type: SourceType
+    source_name: str
+    field_name: str
+    confidence_score: float
+    masked_examples: list[str]
+    suggested_action: str
+
+
+class ReportDsrSummary(BaseModel):
+    total_requests: int
+    counts_by_status: dict[str, int]
+    counts_by_type: dict[str, int]
+    open_requests: int
+    overdue_requests: int
+    latest_request_created_at: datetime | None
+
+    @field_validator("latest_request_created_at", mode="before")
+    @classmethod
+    def latest_request_created_at_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReportConsentPurposeSummary(BaseModel):
+    purpose: str
+    granted_count: int
+    withdrawn_count: int
+    latest_event_at: datetime | None
+
+    @field_validator("latest_event_at", mode="before")
+    @classmethod
+    def latest_event_at_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReportConsentSummary(BaseModel):
+    total_events: int
+    granted_count: int
+    withdrawn_count: int
+    purposes: list[ReportConsentPurposeSummary]
+    latest_event_at: datetime | None
+
+    @field_validator("latest_event_at", mode="before")
+    @classmethod
+    def latest_event_at_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReportRemediationAction(BaseModel):
+    priority: RiskLevel
+    title: str
+    description: str
+    affected_fields_count: int
+    related_pii_types: list[str]
+    related_sources: list[str]
+
+
+class ReportRemediationSummary(BaseModel):
+    total_recommended_actions: int
+    critical_actions: int
+    high_priority_actions: int
+    actions: list[ReportRemediationAction]
+
+
+class ReportReadinessGap(BaseModel):
+    severity: RiskLevel
+    area: Literal["data_discovery", "dsr", "consent", "retention", "security", "ai_or_logs"]
+    message: str
+    suggested_next_step: str
+
+
+class EvidenceReportResponse(BaseModel):
+    project: ReportProjectSummary
+    generated_at: datetime
+    report_version: Literal["0.1.0"]
+    disclaimer: str
+    executive_summary: str
+    scan_summary: ReportScanSummary
+    risk_summary: ReportRiskSummary
+    data_inventory_summary: ReportDataInventorySummary
+    top_risks: list[ReportTopRisk]
+    dsr_summary: ReportDsrSummary
+    consent_summary: ReportConsentSummary
+    remediation_summary: ReportRemediationSummary
+    readiness_gaps: list[ReportReadinessGap]
+
+    @field_validator("generated_at", mode="before")
+    @classmethod
+    def generated_at_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)

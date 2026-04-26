@@ -9,8 +9,9 @@ Current stage:
 - **Stage 2 dashboard v0**: Next.js local dashboard for projects, scanner uploads, scans, findings, and filters.
 - **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
 - **Stage 4 Consent Event API v0**: append-only consent event ledger, dashboard view, and Node SDK wrapper.
+- **Stage 5 Evidence Report v0**: JSON-first technical evidence report for scans, findings, DSR workflow, consent events, remediation, and readiness gaps.
 
-This repository does not include auth, billing, evidence report PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
+This repository does not include auth, billing, server-side PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
 ## Privacy Guarantee
 
@@ -108,6 +109,7 @@ The backend lives in `backend/` and provides:
 - paginated findings responses for dashboard tables
 - DSR Inbox APIs for User Data Requests, notes, and audit events
 - Consent Event APIs for append-only granted/withdrawn events, current status lookup, and event-count summaries
+- Evidence Report API for DPDP readiness evidence across scans, risk inventory, DSR workflow, consent events, remediation, and gaps
 
 The scanner-to-backend flow is:
 
@@ -186,6 +188,8 @@ The dashboard workflow is:
 4. Upload scanner JSON from the project page.
 5. Review scans, risk summaries, and filtered findings.
 6. Open User Data Requests to track privacy requests, notes, and audit events.
+7. Open Consent Events to record and verify purpose-based consent events.
+8. Open Evidence Report to review a technical DPDP readiness evidence summary.
 
 DSR Inbox routes:
 
@@ -247,6 +251,33 @@ await client.trackConsent({
 ```
 
 API key enforcement is not implemented yet; the SDK accepts `apiKey` for future compatibility.
+
+## Evidence Report v0
+
+Evidence Report v0 is a JSON-first technical evidence report. It aggregates existing project data and does not persist generated reports in v0.
+
+Backend endpoint:
+
+- `GET /projects/{project_id}/evidence-report`
+
+Dashboard route:
+
+- `/projects/<PROJECT_ID>/evidence-report`
+
+Report sections:
+
+- Executive Summary
+- Scan & Data Inventory
+- Risk Summary
+- Top Risks
+- User Data Request Workflow
+- Consent Event Ledger
+- Recommended Remediation
+- Readiness Gaps
+
+The dashboard includes a browser print button, so users can use the browser print-to-PDF workflow. There is no server-side PDF designer or PDF generation in v0.
+
+Disclaimer: Evidence Report v0 is a technical evidence report for DPDP readiness evidence. It is not a legal compliance certificate.
 
 ## Output Schema
 

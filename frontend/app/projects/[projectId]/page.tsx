@@ -86,6 +86,9 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/projects/${params.projectId}/evidence-report`}>
+            <Button variant="secondary">Evidence Report</Button>
+          </Link>
           <Link href={`/projects/${params.projectId}/consent`}>
             <Button variant="secondary">Consent Events</Button>
           </Link>
@@ -98,6 +101,19 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
         </div>
       </div>
       {error ? <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div> : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>Evidence Report</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Generate a technical DPDP readiness evidence summary from scans, findings, user requests, and consent events.
+          </div>
+          <Link href={`/projects/${params.projectId}/evidence-report`}>
+            <Button>Open evidence report</Button>
+          </Link>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>User Data Requests</CardTitle>

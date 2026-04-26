@@ -35,3 +35,20 @@ textarea {
   font: inherit;
 }
 
+@media print {
+  body {
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-report {
+    color: #111827;
+  }
+
+  .print-report > * {
+    break-inside: avoid;
+  }
+}

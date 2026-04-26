@@ -256,3 +256,111 @@ export interface ConsentSummaryResponse {
   withdrawn_count: number;
   purposes: ConsentPurposeSummary[];
 }
+
+export interface ReportProjectSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  organization_name: string;
+  created_at: string;
+}
+
+export interface EvidenceScanSummary {
+  scan_count: number;
+  latest_scan_id: string | null;
+  latest_scan_source: string | null;
+  latest_scan_type: string | null;
+  latest_scan_generated_at: string | null;
+}
+
+export interface RiskSummary {
+  total_findings: number;
+  counts_by_risk_level: Record<RiskLevel, number>;
+  critical_count: number;
+  high_count: number;
+  highest_risk_level: RiskLevel | null;
+}
+
+export interface DataInventorySummary {
+  counts_by_pii_type: Record<string, number>;
+  counts_by_source_type: Record<string, number>;
+  sources_scanned: string[];
+  scan_types: string[];
+  latest_scan_generated_at: string | null;
+}
+
+export interface ReportTopRisk {
+  risk_level: RiskLevel;
+  pii_type: string;
+  source_type: SourceType;
+  source_name: string;
+  field_name: string;
+  confidence_score: number;
+  masked_examples: string[];
+  suggested_action: string;
+}
+
+export interface DsrSummary {
+  total_requests: number;
+  counts_by_status: Record<DataRequestStatus, number>;
+  counts_by_type: Record<string, number>;
+  open_requests: number;
+  overdue_requests: number;
+  latest_request_created_at: string | null;
+}
+
+export interface ConsentReportPurposeSummary {
+  purpose: string;
+  granted_count: number;
+  withdrawn_count: number;
+  latest_event_at: string | null;
+}
+
+export interface ConsentReportSummary {
+  total_events: number;
+  granted_count: number;
+  withdrawn_count: number;
+  purposes: ConsentReportPurposeSummary[];
+  latest_event_at: string | null;
+}
+
+export interface RemediationAction {
+  priority: RiskLevel;
+  title: string;
+  description: string;
+  affected_fields_count: number;
+  related_pii_types: string[];
+  related_sources: string[];
+}
+
+export interface RemediationSummary {
+  total_recommended_actions: number;
+  critical_actions: number;
+  high_priority_actions: number;
+  actions: RemediationAction[];
+}
+
+export type ReadinessGapArea = "data_discovery" | "dsr" | "consent" | "retention" | "security" | "ai_or_logs";
+
+export interface ReadinessGap {
+  severity: RiskLevel;
+  area: ReadinessGapArea;
+  message: string;
+  suggested_next_step: string;
+}
+
+export interface EvidenceReportResponse {
+  project: ReportProjectSummary;
+  generated_at: string;
+  report_version: "0.1.0";
+  disclaimer: string;
+  executive_summary: string;
+  scan_summary: EvidenceScanSummary;
+  risk_summary: RiskSummary;
+  data_inventory_summary: DataInventorySummary;
+  top_risks: ReportTopRisk[];
+  dsr_summary: DsrSummary;
+  consent_summary: ConsentReportSummary;
+  remediation_summary: RemediationSummary;
+  readiness_gaps: ReadinessGap[];
+}

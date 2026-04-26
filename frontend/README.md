@@ -2,7 +2,7 @@
 
 Next.js dashboard v0 for the DPDP PrivacyOps data map.
 
-The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, and review consent events.
+The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, review consent events, and view a technical Evidence Report.
 
 Auth is not implemented yet. This is a local MVP dashboard.
 
@@ -55,6 +55,7 @@ dpdp-scanner scan-json \
 5. Review scans, summaries, findings, filters, and masked examples.
 6. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
 7. Open Consent Events from the project page to record granted/withdrawn events and check current status by user and purpose.
+8. Open Evidence Report from the project page to review DPDP readiness evidence and print the report from the browser.
 
 ## DSR Inbox
 
@@ -118,6 +119,39 @@ Consent Event API v0 is an event ledger and developer API. It is not a cookie ba
 
 Privacy rule: the consent form asks for `external_user_id` only. It does not ask for email, phone, or name.
 
+## Evidence Report
+
+Dashboard route:
+
+```text
+/projects/<PROJECT_ID>/evidence-report
+```
+
+The Evidence Report page fetches:
+
+```text
+GET /projects/{project_id}/evidence-report
+```
+
+Report sections:
+
+- Executive Summary
+- Scan & Data Inventory
+- Risk Summary
+- Top Risks
+- User Data Request Workflow
+- Consent Event Ledger
+- Recommended Remediation
+- Readiness Gaps
+
+Evidence Report v0 is JSON-first and generated on demand. It is not persisted yet. The dashboard includes a print button that calls the browser print dialog, so users can use browser print-to-PDF. There is no server-side PDF generation in v0.
+
+The report disclaimer is shown clearly:
+
+```text
+This report is technical evidence of discovered data flows, risks, and workflow status. It is not a legal compliance certificate.
+```
+
 ## Commands
 
 ```bash
@@ -136,4 +170,5 @@ npm run lint
 - The UI displays only backend-returned metadata and masked examples.
 - Privacy request payloads are sent only to the configured backend API and are not stored in browser storage.
 - Consent event payloads are sent only to the configured backend API and are not stored in browser storage.
+- Evidence reports display backend-returned metadata, masked examples, workflow status, and recommended actions.
 - No telemetry or analytics are included.

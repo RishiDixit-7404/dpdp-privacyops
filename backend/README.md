@@ -1,8 +1,8 @@
 # DPDP PrivacyOps Backend
 
-FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0 and Consent Event API v0.
+FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0, Consent Event API v0, and Evidence Report v0.
 
-It does not include auth, billing, evidence reports, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
+It does not include auth, billing, server-side PDF generation, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
 
 Auth is intentionally not implemented yet. These APIs are the local/backend foundation for the upcoming dashboard and should not be exposed publicly without an auth layer.
 
@@ -117,6 +117,7 @@ When `BACKEND_TEST_DATABASE_URL` is set, the test suite creates and drops the ap
 - `GET /projects/{project_id}/consent-events`
 - `GET /projects/{project_id}/consent-status`
 - `GET /projects/{project_id}/consent-summary`
+- `GET /projects/{project_id}/evidence-report`
 
 ## Create Project
 
@@ -314,6 +315,36 @@ Privacy rule: consent events use `external_user_id` only. The API does not ask f
 
 Auth and API key enforcement are intentionally not implemented yet.
 
+## Evidence Report API
+
+Evidence Report v0 is JSON-first and generated on demand. Reports are not persisted in v0.
+
+Endpoint:
+
+```bash
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/evidence-report"
+```
+
+The report aggregates:
+
+- project details
+- scan count and latest scan
+- findings by risk level, PII type, and source type
+- top critical/high findings
+- sources scanned and scan types
+- User Data Request counts, open requests, and overdue requests
+- consent event counts and purpose summaries
+- deterministic remediation actions
+- deterministic readiness gaps
+
+The response includes this disclaimer:
+
+```text
+This report is technical evidence of discovered data flows, risks, and workflow status. It is not a legal compliance certificate.
+```
+
+Evidence Report v0 is a technical evidence report for DPDP readiness evidence. It is not a legal certificate, and it does not perform legal review.
+
 ## Error Responses
 
 Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
@@ -322,6 +353,7 @@ Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
 - missing project or scan: `404`
 - invalid payloads or invalid enum filters: `422`
 - missing consent status: `404`
+- missing evidence report project: `404`
 
 ## Privacy Notes
 
