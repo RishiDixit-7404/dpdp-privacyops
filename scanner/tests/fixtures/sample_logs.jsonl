@@ -1,0 +1,3 @@
+{"event":"chat_prompt","user":{"email":"rahul.logs@example.com"},"payload":{"input_text":"My phone is 9876543210"},"messages":[{"text":"Please contact ananya.logs@example.org"}]}
+{"event":"support_ticket","ticket":{"ticket_body":"PAN ABCDE1234F provided for verification"},"logs":{"metadata":{"aadhaar":"1234 5678 9012"}},"payment":{"payload":{"upi":"rahul@upi"}}}
+{"event":"api_request","request":{"headers":{"authorization":"Bearer abcdefghijk123","x_api_key":"sk_test_LOGSKEY123456"}},"prompt":"Need help with contact number 919876543211","response":"We will follow up by email priya.response@example.net"}

@@ -1,0 +1,4 @@
+name,email,phone,pan,aadhaar,upi,dob,notes,api_key
+Rahul Sharma,rahul.sharma@example.com,+91 9876543210,ABCDE1234F,1234 5678 9012,rahul@upi,1998-04-15,Customer asked to update phone 9876543210,Bearer abcdefghijk123
+Ananya Rao,ananya.rao@example.org,919876543211,FGHIJ5678K,2345 6789 0123,ananya@okicici,12/08/2001,Support note with PAN LMNOP1234Q,sk_test_FAKEKEY1234567890
+

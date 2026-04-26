@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: dpdp
+      POSTGRES_PASSWORD: dpdp
+      POSTGRES_DB: dpdp_privacyops
+    ports:
+      - "5432:5432"
+    volumes:
+      - dpdp_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  dpdp_postgres_data:
+
