@@ -102,6 +102,7 @@ The backend lives in `backend/` and provides:
 - scanner JSON upload API at `POST /projects/{project_id}/scans/upload`
 - scan list/detail APIs
 - findings APIs with filters for risk level, PII type, source type, and scan ID
+- paginated findings responses for dashboard tables
 
 The scanner-to-backend flow is:
 
@@ -126,10 +127,25 @@ cd backend
 pytest
 ```
 
+Backend tests use SQLite in-memory by default. To run them against local Postgres:
+
+```bash
+docker compose up -d postgres
+cd backend
+BACKEND_TEST_DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp_test pytest
+```
+
 Local Postgres is available with:
 
 ```bash
 docker compose up -d postgres
+```
+
+Run the backend migration against local Postgres with:
+
+```bash
+cd backend
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python -m alembic upgrade head
 ```
 
 ## Output Schema

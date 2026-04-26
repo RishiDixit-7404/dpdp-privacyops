@@ -120,6 +120,13 @@ class ScanSummary(BaseModel):
     high_count: int
 
 
+class FindingListResponse(BaseModel):
+    items: list[FindingResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class ScanResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -140,4 +147,3 @@ class ScanUploadResponse(ScanResponse):
 
 class ScanDetailResponse(ScanResponse):
     summary: ScanSummary
-

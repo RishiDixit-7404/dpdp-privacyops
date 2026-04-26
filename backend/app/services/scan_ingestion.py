@@ -11,6 +11,9 @@ from app import models
 from app.schemas import ScanSummary, ScannerUpload
 
 
+RISK_LEVEL_ORDER = ("critical", "high", "medium", "low")
+
+
 class DuplicateScannerScanError(Exception):
     """Raised when a scanner scan_id was already ingested."""
 
@@ -70,23 +73,24 @@ def ingest_scanner_upload(db: Session, project_id: UUID, payload: ScannerUpload)
 def summarize_upload(payload: ScannerUpload) -> ScanSummary:
     risk_counts = Counter(finding.risk_level.value for finding in payload.findings)
     pii_counts = Counter(finding.pii_type for finding in payload.findings)
-    return ScanSummary(
-        total_findings=len(payload.findings),
-        counts_by_risk_level=dict(risk_counts),
-        counts_by_pii_type=dict(pii_counts),
-        critical_count=risk_counts.get("critical", 0),
-        high_count=risk_counts.get("high", 0),
-    )
+    return _summary_from_counts(total_findings=len(payload.findings), risk_counts=risk_counts, pii_counts=pii_counts)
 
 
 def summarize_scan(scan: models.Scan) -> ScanSummary:
     risk_counts = Counter(finding.risk_level for finding in scan.findings)
     pii_counts = Counter(finding.pii_type for finding in scan.findings)
+    return _summary_from_counts(total_findings=len(scan.findings), risk_counts=risk_counts, pii_counts=pii_counts)
+
+
+def _summary_from_counts(
+    total_findings: int,
+    risk_counts: Counter[str],
+    pii_counts: Counter[str],
+) -> ScanSummary:
     return ScanSummary(
-        total_findings=len(scan.findings),
-        counts_by_risk_level=dict(risk_counts),
+        total_findings=total_findings,
+        counts_by_risk_level={risk_level: risk_counts.get(risk_level, 0) for risk_level in RISK_LEVEL_ORDER},
         counts_by_pii_type=dict(pii_counts),
         critical_count=risk_counts.get("critical", 0),
         high_count=risk_counts.get("high", 0),
     )
-

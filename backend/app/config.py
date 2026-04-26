@@ -20,9 +20,9 @@ def _parse_cors_origins(value: str) -> list[str]:
 def get_settings() -> Settings:
     app_env = os.getenv("APP_ENV", "development")
     default_database_url = "sqlite:///./dpdp_privacyops_dev.db"
+    default_cors_origins = "http://localhost:3000,http://127.0.0.1:3000"
     return Settings(
         database_url=os.getenv("DATABASE_URL", default_database_url),
         app_env=app_env,
-        cors_origins=_parse_cors_origins(os.getenv("CORS_ORIGINS", "http://localhost:3000")),
+        cors_origins=_parse_cors_origins(os.getenv("CORS_ORIGINS", default_cors_origins)),
     )
-

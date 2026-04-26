@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+import os
+from pathlib import Path
+import sys
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,17 +15,33 @@ from app.database import Base, get_db
 from app.main import app
 
 
-engine = create_engine(
-    "sqlite+pysqlite:///:memory:",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-    future=True,
-)
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SCANNER_PACKAGE_PATH = REPO_ROOT / "scanner"
+if str(SCANNER_PACKAGE_PATH) not in sys.path:
+    sys.path.insert(0, str(SCANNER_PACKAGE_PATH))
+
+
+def _test_database_url() -> str:
+    return os.getenv("BACKEND_TEST_DATABASE_URL", "sqlite+pysqlite:///:memory:")
+
+
+def _engine_kwargs(database_url: str) -> dict[str, object]:
+    if database_url.startswith("sqlite"):
+        return {
+            "connect_args": {"check_same_thread": False},
+            "poolclass": StaticPool,
+        }
+    return {}
+
+
+database_url = _test_database_url()
+engine = create_engine(database_url, future=True, **_engine_kwargs(database_url))
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
 @pytest.fixture()
 def db_session() -> Generator[Session, None, None]:
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
     try:
@@ -128,4 +147,3 @@ def scanner_payload(scan_id: str = "scanner-scan-001") -> dict[str, object]:
             },
         ],
     }
-

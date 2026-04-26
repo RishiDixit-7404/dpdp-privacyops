@@ -4,12 +4,12 @@ services:
     environment:
       POSTGRES_USER: dpdp
       POSTGRES_PASSWORD: dpdp
-      POSTGRES_DB: dpdp_privacyops
+      POSTGRES_DB: dpdp
     ports:
       - "5432:5432"
     volumes:
       - dpdp_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
 
 volumes:
   dpdp_postgres_data:
-
