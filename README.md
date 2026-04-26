@@ -6,8 +6,9 @@ Current stage:
 
 - **Stage 1 scanner v0.1**: local CSV, Postgres metadata, JSON, and JSONL PII discovery scanner.
 - **Stage 2 backend foundation**: FastAPI API for accepting scanner JSON uploads, storing scans/findings, and serving future dashboard data.
+- **Stage 2 dashboard v0**: Next.js local dashboard for projects, scanner uploads, scans, findings, and filters.
 
-This repository does not include a Next.js dashboard, auth, billing, DSR inbox, consent API, evidence report PDF generation, external integrations, or deployment complexity yet.
+This repository does not include auth, billing, DSR inbox, consent API, evidence report PDF generation, external integrations, or deployment complexity yet.
 
 ## Privacy Guarantee
 
@@ -147,6 +148,39 @@ Run the backend migration against local Postgres with:
 cd backend
 DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python -m alembic upgrade head
 ```
+
+## Frontend Dashboard
+
+The Next.js dashboard lives in `frontend/`.
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Set the API base URL with:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+
+Dashboard checks:
+
+```bash
+cd frontend
+npm run typecheck
+npm run build
+npm test
+```
+
+The dashboard workflow is:
+
+1. Run the FastAPI backend.
+2. Run the scanner and produce a JSON findings file.
+3. Create a project in the dashboard.
+4. Upload scanner JSON from the project page.
+5. Review scans, risk summaries, and filtered findings.
 
 ## Output Schema
 
