@@ -10,6 +10,7 @@ Current stage:
 - **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
 - **Stage 4 Consent Event API v0**: append-only consent event ledger, dashboard view, and Node SDK wrapper.
 - **Stage 5 Evidence Report v0**: JSON-first technical evidence report for scans, findings, DSR workflow, consent events, remediation, and readiness gaps.
+- **MVP demo hardening**: local Postgres verification, deterministic demo seed/reset scripts, privacy smoke checks, and a 3-minute demo script.
 
 This repository does not include auth, billing, server-side PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
@@ -20,6 +21,81 @@ The scanner runs inside your environment and does not upload raw personal data. 
 No external APIs, telemetry, or network uploads are used by the scanner.
 
 The output contract sets `raw_pii_uploaded` to `false`. Pydantic validation rejects any scanner result that tries to set it to `true`.
+
+## Local MVP Demo
+
+This path starts local Postgres, runs migrations, seeds a realistic demo project, and opens the dashboard against the FastAPI backend.
+
+Prerequisites:
+
+- Python 3.11+
+- Node 18+ for the current local build
+- Docker
+- npm
+
+Before any hosted or customer-facing deployment, upgrade Node to current LTS and upgrade Next.js to a non-vulnerable supported version.
+
+If your shell does not provide `python`, use `python3` in the commands below.
+
+Terminal 1, start Postgres and the backend:
+
+```bash
+docker compose up -d postgres
+
+cd backend
+python -m pip install -e '.[dev]'
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python -m alembic upgrade head
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python -m uvicorn app.main:app --reload
+```
+
+Terminal 2, start the frontend:
+
+```bash
+cd frontend
+npm install
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev
+```
+
+Terminal 3, seed demo data:
+
+```bash
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/seed_demo_data.py
+```
+
+Then open:
+
+- Dashboard projects: `http://localhost:3000/projects`
+- Evidence report: `http://localhost:3000/projects/<PROJECT_ID>/evidence-report`
+- Public privacy request form: `http://localhost:3000/public/projects/<PROJECT_ID>/privacy-request`
+- Consent events: `http://localhost:3000/projects/<PROJECT_ID>/consent`
+
+The seed script prints the exact project URLs after it runs.
+
+Helper scripts:
+
+```bash
+# Prepare Postgres, run migrations, seed demo data, and print dev-server commands.
+bash scripts/demo_local.sh
+
+# Verify migrations and backend tests against live local Postgres.
+bash scripts/verify_postgres_backend.sh
+
+# Remove only the demo organization named "Acme EdTech Demo".
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/reset_demo_data.py
+
+# Run basic privacy/security source checks.
+python scripts/privacy_smoke_check.py
+```
+
+The demo scenario creates:
+
+- organization: `Acme EdTech Demo`
+- project: `Student Learning Platform`
+- scanner findings across JSON logs, support tickets, student data, finance payloads, AI prompts, and auth request bodies
+- User Data Requests in `new`, `verifying`, `in_progress`, and `completed` states, including one overdue open request
+- consent events for `marketing_whatsapp`, `ai_processing`, and `product_analytics`
+
+Use the 3-minute walkthrough in [docs/demo-script.md](docs/demo-script.md).
 
 ## Install Locally
 
@@ -140,6 +216,12 @@ Backend tests use SQLite in-memory by default. To run them against local Postgre
 docker compose up -d postgres
 cd backend
 BACKEND_TEST_DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp_test pytest
+```
+
+Or run the full live Postgres backend verification path from the repo root:
+
+```bash
+bash scripts/verify_postgres_backend.sh
 ```
 
 Local Postgres is available with:
@@ -358,3 +440,24 @@ docker run --rm \
   -v /tmp:/out \
   dpdp-scanner scan-csv --path /data/sample_customers.csv --output /out/findings.json
 ```
+
+## Known Limitations
+
+- no auth
+- no billing
+- no hosted deployment
+- no server-side PDF generation
+- no automatic deletion across systems
+- no email notifications
+- no external integrations
+- no API key enforcement for the consent SDK yet
+- Next.js is pinned for the current local Node 18 path and must be upgraded before production or any customer-facing deployment
+
+## Production Hardening Checklist
+
+- Upgrade Node to current LTS.
+- Upgrade Next.js to a non-vulnerable supported version.
+- Add auth, project-level access control, and API key enforcement.
+- Add hosted deployment configuration and secret management.
+- Add production database backups, retention controls, and operational monitoring.
+- Add server-side report persistence or export only after the JSON-first workflow is validated.

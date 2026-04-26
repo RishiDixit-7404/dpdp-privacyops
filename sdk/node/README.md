@@ -69,3 +69,4 @@ const status = await client.getConsentStatus({
 - Auth/API key enforcement is not implemented by the backend yet.
 - This is not a cookie banner or full preference center.
 - Consent summary counts in the API are event counts, not unique-user counts in v0.
+- The SDK is included in the local MVP demo, but production use requires backend API key enforcement and hosted deployment hardening first.

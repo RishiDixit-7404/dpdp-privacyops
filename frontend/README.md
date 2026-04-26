@@ -10,6 +10,8 @@ Auth is not implemented yet. This is a local MVP dashboard.
 
 Use Node 18+.
 
+Before any hosted or customer-facing deployment, upgrade Node to current LTS and upgrade Next.js to a non-vulnerable supported version.
+
 ```bash
 cd frontend
 npm install
@@ -38,6 +40,28 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Local Demo Data
+
+After starting Postgres and running backend migrations, seed the demo project from the repo root:
+
+```bash
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/seed_demo_data.py
+```
+
+The script prints direct URLs for:
+
+- project detail
+- User Data Requests
+- Consent Events
+- Evidence Report
+- public Privacy Request intake
+
+Reset only the demo organization and related data:
+
+```bash
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/reset_demo_data.py
+```
 
 ## Workflow
 
@@ -161,6 +185,12 @@ npm test
 npm run lint
 ```
 
+From the repo root, run the basic privacy/security guardrail:
+
+```bash
+python scripts/privacy_smoke_check.py
+```
+
 ## Privacy Notes
 
 - Uploaded scanner JSON is parsed client-side only for upload.
@@ -172,3 +202,11 @@ npm run lint
 - Consent event payloads are sent only to the configured backend API and are not stored in browser storage.
 - Evidence reports display backend-returned metadata, masked examples, workflow status, and recommended actions.
 - No telemetry or analytics are included.
+
+## Known Demo Limitations
+
+- Auth is not implemented yet.
+- The dashboard is local-only for the MVP demo.
+- Evidence Report v0 uses browser print-to-PDF; there is no server-side PDF generation.
+- Automatic deletion across systems and email notifications are not implemented.
+- Node and Next.js must be upgraded before production or customer-facing deployment.

@@ -96,6 +96,38 @@ BACKEND_TEST_DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp_tes
 
 When `BACKEND_TEST_DATABASE_URL` is set, the test suite creates and drops the app tables in that database. Do not point it at a database with data you need.
 
+From the repo root, the full live Postgres verification path is:
+
+```bash
+bash scripts/verify_postgres_backend.sh
+```
+
+That script starts the existing compose `postgres` service, waits for readiness, runs Alembic against `dpdp`, and runs backend tests against `dpdp_test`.
+
+## Demo Seed Data
+
+From the repo root, seed a local demo project after migrations:
+
+```bash
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/seed_demo_data.py
+```
+
+The seed creates or reuses:
+
+- organization: `Acme EdTech Demo`
+- project: `Student Learning Platform`
+- masked scanner findings across logs, support tickets, student data, finance payloads, AI prompts, and auth request bodies
+- User Data Requests with notes and audit events
+- consent events for multiple purposes
+
+Reset only that demo organization and its related data:
+
+```bash
+DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/reset_demo_data.py
+```
+
+The reset script has a hard guard: it deletes only organizations named `Acme EdTech Demo`.
+
 ## Endpoint List
 
 - `GET /health`
@@ -345,6 +377,8 @@ This report is technical evidence of discovered data flows, risks, and workflow 
 
 Evidence Report v0 is a technical evidence report for DPDP readiness evidence. It is not a legal certificate, and it does not perform legal review.
 
+Demo data seeded by `scripts/seed_demo_data.py` populates this endpoint enough to show scans, findings, DSR workflow status, consent events, remediation actions, and readiness gaps.
+
 ## Error Responses
 
 Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
@@ -358,3 +392,9 @@ Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
 ## Privacy Notes
 
 The backend stores scanner metadata and masked examples only for scanner uploads. Consent events are keyed by `external_user_id` and purpose; no raw email, phone, or name fields are required. It does not call external APIs, does not send telemetry, and does not log raw scanner or request payload values.
+
+Run the repo-level guardrail check from the repo root:
+
+```bash
+python scripts/privacy_smoke_check.py
+```
