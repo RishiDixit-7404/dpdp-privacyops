@@ -85,11 +85,29 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
             {project ? `${project.organization.name} · created ${formatDate(project.created_at)}` : "Loading project..."}
           </p>
         </div>
-        <Link href="#findings">
-          <Button variant="secondary">View findings inventory</Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/projects/${params.projectId}/requests`}>
+            <Button variant="secondary">User Data Requests</Button>
+          </Link>
+          <Link href="#findings">
+            <Button variant="secondary">View findings inventory</Button>
+          </Link>
+        </div>
       </div>
       {error ? <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div> : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Data Requests</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Track access, correction, deletion, consent withdrawal, and grievance requests for this project.
+          </div>
+          <Link href={`/projects/${params.projectId}/requests`}>
+            <Button>Open request inbox</Button>
+          </Link>
+        </CardContent>
+      </Card>
       <section className="grid gap-4">
         <h2 className="text-lg font-semibold text-foreground">Latest scan summary</h2>
         <ScanSummaryCards summary={latestSummary} />

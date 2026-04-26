@@ -1,8 +1,17 @@
 import type {
+  DataRequest,
+  DataRequestCreateInput,
+  DataRequestDetail,
+  DataRequestFilters,
+  DataRequestListResponse,
+  DataRequestNote,
+  DataRequestNoteCreateInput,
+  DataRequestUpdateInput,
   FindingFilters,
   FindingListResponse,
   Project,
   ProjectCreateInput,
+  PublicDataRequestConfirmation,
   Scan,
   ScanDetail,
   ScannerUploadResponse
@@ -38,7 +47,7 @@ export function apiErrorMessage(error: unknown): string {
       return "This scanner output has already been uploaded.";
     }
     if (error.status === 422) {
-      return "The scanner output could not be validated. Check that it is unmodified scanner JSON.";
+      return "The request could not be validated. Check the submitted fields.";
     }
     if (error.status === 404) {
       return error.message || "The requested item was not found.";
@@ -145,3 +154,51 @@ export function getScanFindings(
   );
 }
 
+export function createDataRequest(projectId: string, payload: DataRequestCreateInput): Promise<DataRequest> {
+  return request<DataRequest>(`/projects/${projectId}/data-requests`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function createPublicDataRequest(
+  projectId: string,
+  payload: DataRequestCreateInput
+): Promise<PublicDataRequestConfirmation> {
+  return request<PublicDataRequestConfirmation>(`/public/projects/${projectId}/data-requests`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function getProjectDataRequests(
+  projectId: string,
+  filters: DataRequestFilters = {}
+): Promise<DataRequestListResponse> {
+  return request<DataRequestListResponse>(
+    `/projects/${projectId}/data-requests${queryString({
+      status: filters.status,
+      request_type: filters.request_type,
+      limit: filters.limit ?? 100,
+      offset: filters.offset ?? 0
+    })}`
+  );
+}
+
+export function getDataRequest(requestId: string): Promise<DataRequestDetail> {
+  return request<DataRequestDetail>(`/data-requests/${requestId}`);
+}
+
+export function updateDataRequest(requestId: string, payload: DataRequestUpdateInput): Promise<DataRequestDetail> {
+  return request<DataRequestDetail>(`/data-requests/${requestId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function addDataRequestNote(requestId: string, payload: DataRequestNoteCreateInput): Promise<DataRequestNote> {
+  return request<DataRequestNote>(`/data-requests/${requestId}/notes`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}

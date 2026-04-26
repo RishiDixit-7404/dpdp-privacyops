@@ -13,6 +13,17 @@ SCAN_TYPES = ("csv", "postgres", "json")
 SOURCE_TYPES = ("csv", "postgres", "json")
 RISK_LEVELS = ("low", "medium", "high", "critical")
 DETECTION_METHODS = ("column_name", "regex_value", "combined")
+DATA_REQUEST_TYPES = ("access", "correction", "deletion", "consent_withdrawal", "grievance")
+DATA_REQUEST_STATUSES = ("new", "verifying", "in_progress", "completed", "rejected")
+DATA_REQUEST_AUDIT_EVENT_TYPES = (
+    "created",
+    "status_changed",
+    "note_added",
+    "assigned",
+    "due_date_changed",
+    "completed",
+    "rejected",
+)
 
 
 def utc_now() -> datetime:
@@ -45,6 +56,7 @@ class Project(Base):
 
     organization: Mapped[Organization] = relationship(back_populates="projects")
     scans: Mapped[list[Scan]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    data_requests: Mapped[list[DataRequest]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Scan(Base):
@@ -112,3 +124,88 @@ class Finding(Base):
 
     scan: Mapped[Scan] = relationship(back_populates="findings")
 
+
+class DataRequest(Base):
+    __tablename__ = "data_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "request_type in ('access', 'correction', 'deletion', 'consent_withdrawal', 'grievance')",
+            name="ck_data_requests_request_type",
+        ),
+        CheckConstraint(
+            "status in ('new', 'verifying', 'in_progress', 'completed', 'rejected')",
+            name="ck_data_requests_status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    project_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    request_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="new", index=True)
+    requester_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    requester_email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    requester_identifier: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    request_details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    assigned_to: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    project: Mapped[Project] = relationship(back_populates="data_requests")
+    notes: Mapped[list[DataRequestNote]] = relationship(
+        back_populates="data_request",
+        cascade="all, delete-orphan",
+        order_by="DataRequestNote.created_at",
+    )
+    audit_events: Mapped[list[DataRequestAuditEvent]] = relationship(
+        back_populates="data_request",
+        cascade="all, delete-orphan",
+        order_by="DataRequestAuditEvent.created_at",
+    )
+
+
+class DataRequestNote(Base):
+    __tablename__ = "data_request_notes"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    data_request_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("data_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    note: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    data_request: Mapped[DataRequest] = relationship(back_populates="notes")
+
+
+class DataRequestAuditEvent(Base):
+    __tablename__ = "data_request_audit_events"
+    __table_args__ = (
+        CheckConstraint(
+            "event_type in ('created', 'status_changed', 'note_added', 'assigned', 'due_date_changed', 'completed', 'rejected')",
+            name="ck_data_request_audit_events_event_type",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    data_request_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("data_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    event_metadata: Mapped[dict[str, object] | None] = mapped_column("metadata", JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    data_request: Mapped[DataRequest] = relationship(back_populates="audit_events")

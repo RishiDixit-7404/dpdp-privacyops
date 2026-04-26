@@ -6,6 +6,8 @@ import { ApiError, apiErrorMessage } from "@/lib/api";
 import { formatConfidence } from "@/lib/format";
 import { RiskBadge } from "@/components/findings/risk-badge";
 import { FindingsTable } from "@/components/findings/findings-table";
+import { DataRequestStatusBadge } from "@/components/data-requests/data-request-status-badge";
+import { DataRequestTypeBadge } from "@/components/data-requests/data-request-type-badge";
 import type { Finding } from "@/lib/types";
 
 const finding: Finding = {
@@ -42,6 +44,18 @@ describe("dashboard basics", () => {
     expect(apiErrorMessage(new ApiError(409, "scanner_scan_id already ingested"))).toBe(
       "This scanner output has already been uploaded."
     );
+  });
+
+  it("renders data request status and type badges", () => {
+    render(
+      <>
+        <DataRequestStatusBadge status="in_progress" />
+        <DataRequestTypeBadge requestType="consent_withdrawal" />
+      </>
+    );
+
+    expect(screen.getByText("In progress")).toBeInTheDocument();
+    expect(screen.getByText("Consent withdrawal")).toBeInTheDocument();
   });
 
   it("renders a finding without showing unsupported internal fields", () => {

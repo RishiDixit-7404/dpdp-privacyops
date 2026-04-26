@@ -3,7 +3,8 @@ import Link from "next/link";
 const items = [
   { href: "/projects", label: "Projects" },
   { href: "/projects#scanner-upload", label: "Scanner Upload" },
-  { href: "/projects#findings", label: "Findings" }
+  { href: "/projects#findings", label: "Findings" },
+  { href: "/projects", label: "Requests" }
 ];
 
 export function TopNav() {
@@ -13,7 +14,7 @@ export function TopNav() {
         <Link
           className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           href={item.href}
-          key={item.href}
+          key={item.label}
         >
           {item.label}
         </Link>
@@ -21,4 +22,3 @@ export function TopNav() {
     </nav>
   );
 }
-

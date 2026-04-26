@@ -1,4 +1,4 @@
-import type { PiiType, RiskLevel, ScanType, SourceType } from "@/lib/types";
+import type { DataRequestStatus, DataRequestType, PiiType, RiskLevel, ScanType, SourceType } from "@/lib/types";
 
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
@@ -48,6 +48,44 @@ export const piiTypeOptions: PiiType[] = [
   "free_text_possible_pii"
 ];
 
+export const dataRequestStatusOptions: DataRequestStatus[] = [
+  "new",
+  "verifying",
+  "in_progress",
+  "completed",
+  "rejected"
+];
+
+export const dataRequestTypeOptions: DataRequestType[] = [
+  "access",
+  "correction",
+  "deletion",
+  "consent_withdrawal",
+  "grievance"
+];
+
+export function dataRequestTypeLabel(value: DataRequestType): string {
+  const labels: Record<DataRequestType, string> = {
+    access: "Access",
+    correction: "Correction",
+    deletion: "Deletion",
+    consent_withdrawal: "Consent withdrawal",
+    grievance: "Grievance"
+  };
+  return labels[value];
+}
+
+export function dataRequestStatusLabel(value: DataRequestStatus): string {
+  const labels: Record<DataRequestStatus, string> = {
+    new: "New",
+    verifying: "Verifying",
+    in_progress: "In progress",
+    completed: "Completed",
+    rejected: "Rejected"
+  };
+  return labels[value];
+}
+
 export function describeFinding(piiType: string, fieldName: string): string {
   if (piiType === "aadhaar") {
     return `Aadhaar-like data found in ${fieldName}`;
@@ -60,4 +98,3 @@ export function describeFinding(piiType: string, fieldName: string): string {
   }
   return `${formatEnumLabel(piiType)} detected in ${fieldName}`;
 }
-

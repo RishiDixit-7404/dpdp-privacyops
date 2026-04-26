@@ -1,8 +1,8 @@
 # DPDP PrivacyOps Backend
 
-FastAPI backend foundation for Stage 2 of DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the future dashboard.
+FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It now also includes DSR Inbox v0 for tracking User Data Requests.
 
-It does not include auth, billing, DSR handling, consent APIs, evidence reports, external integrations, or frontend code.
+It does not include auth, billing, consent APIs, evidence reports, automatic deletion across systems, email notifications, external integrations, or frontend code.
 
 Auth is intentionally not implemented yet. These APIs are the local/backend foundation for the upcoming dashboard and should not be exposed publicly without an auth layer.
 
@@ -107,6 +107,12 @@ When `BACKEND_TEST_DATABASE_URL` is set, the test suite creates and drops the ap
 - `GET /scans/{scan_id}`
 - `GET /projects/{project_id}/findings`
 - `GET /scans/{scan_id}/findings`
+- `POST /projects/{project_id}/data-requests`
+- `GET /projects/{project_id}/data-requests`
+- `GET /data-requests/{request_id}`
+- `PATCH /data-requests/{request_id}`
+- `POST /data-requests/{request_id}/notes`
+- `POST /public/projects/{project_id}/data-requests`
 
 ## Create Project
 
@@ -174,6 +180,83 @@ Supported query params:
 - `scan_id`: scan UUID, on project findings only
 - `limit`: default `100`, max `500`
 - `offset`: default `0`
+
+## DSR Inbox APIs
+
+DSR Inbox v0 uses clearer product wording in the UI: User Data Request or Privacy Request. It tracks request workflow and evidence only. Auth, identity verification automation, email notifications, and automatic deletion across systems are intentionally not implemented yet.
+
+Request types:
+
+- `access`
+- `correction`
+- `deletion`
+- `consent_withdrawal`
+- `grievance`
+
+Statuses:
+
+- `new`
+- `verifying`
+- `in_progress`
+- `completed`
+- `rejected`
+
+Create an admin-side request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/data-requests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request_type": "access",
+    "requester_name": "Rahul Sharma",
+    "requester_email": "rahul@example.com",
+    "requester_identifier": "usr_123",
+    "request_details": "Please send me a copy of my data."
+  }'
+```
+
+List requests with filters and pagination:
+
+```bash
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/data-requests?status=new&request_type=access&limit=50&offset=0"
+```
+
+Update workflow fields:
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/data-requests/<REQUEST_ID> \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "in_progress",
+    "assigned_to": "ops-owner",
+    "due_date": "2026-05-10T10:00:00Z"
+  }'
+```
+
+Add a note:
+
+```bash
+curl -X POST http://127.0.0.1:8000/data-requests/<REQUEST_ID>/notes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "note": "Verified requester email manually.",
+    "created_by": "admin"
+  }'
+```
+
+Public intake endpoint for a future privacy request form:
+
+```bash
+curl -X POST http://127.0.0.1:8000/public/projects/<PROJECT_ID>/data-requests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request_type": "deletion",
+    "requester_email": "rahul@example.com",
+    "request_details": "Please delete my account data."
+  }'
+```
+
+The public endpoint only creates a request and returns a minimal confirmation. It does not expose project data or request lists.
 
 ## Error Responses
 

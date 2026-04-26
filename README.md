@@ -7,8 +7,9 @@ Current stage:
 - **Stage 1 scanner v0.1**: local CSV, Postgres metadata, JSON, and JSONL PII discovery scanner.
 - **Stage 2 backend foundation**: FastAPI API for accepting scanner JSON uploads, storing scans/findings, and serving future dashboard data.
 - **Stage 2 dashboard v0**: Next.js local dashboard for projects, scanner uploads, scans, findings, and filters.
+- **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
 
-This repository does not include auth, billing, DSR inbox, consent API, evidence report PDF generation, external integrations, or deployment complexity yet.
+This repository does not include auth, billing, consent API, evidence report PDF generation, external integrations, automatic deletion across systems, email notifications, or deployment complexity yet.
 
 ## Privacy Guarantee
 
@@ -104,6 +105,7 @@ The backend lives in `backend/` and provides:
 - scan list/detail APIs
 - findings APIs with filters for risk level, PII type, source type, and scan ID
 - paginated findings responses for dashboard tables
+- DSR Inbox APIs for User Data Requests, notes, and audit events
 
 The scanner-to-backend flow is:
 
@@ -181,6 +183,17 @@ The dashboard workflow is:
 3. Create a project in the dashboard.
 4. Upload scanner JSON from the project page.
 5. Review scans, risk summaries, and filtered findings.
+6. Open User Data Requests to track privacy requests, notes, and audit events.
+
+DSR Inbox routes:
+
+- Admin inbox: `/projects/<PROJECT_ID>/requests`
+- Request detail: `/projects/<PROJECT_ID>/requests/<REQUEST_ID>`
+- Public intake form: `/public/projects/<PROJECT_ID>/privacy-request`
+
+Request types are `access`, `correction`, `deletion`, `consent_withdrawal`, and `grievance`. Statuses are `new`, `verifying`, `in_progress`, `completed`, and `rejected`.
+
+DSR Inbox v0 is workflow tracking only. It does not implement auth, automatic deletion, email notifications, identity verification automation, or evidence report PDF generation.
 
 ## Output Schema
 

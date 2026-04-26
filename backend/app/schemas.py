@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Literal
 from uuid import UUID
@@ -31,6 +31,48 @@ class DetectionMethod(StrEnum):
     column_name = "column_name"
     regex_value = "regex_value"
     combined = "combined"
+
+
+class DataRequestType(StrEnum):
+    access = "access"
+    correction = "correction"
+    deletion = "deletion"
+    consent_withdrawal = "consent_withdrawal"
+    grievance = "grievance"
+
+
+class DataRequestStatus(StrEnum):
+    new = "new"
+    verifying = "verifying"
+    in_progress = "in_progress"
+    completed = "completed"
+    rejected = "rejected"
+
+
+class DataRequestAuditEventType(StrEnum):
+    created = "created"
+    status_changed = "status_changed"
+    note_added = "note_added"
+    assigned = "assigned"
+    due_date_changed = "due_date_changed"
+    completed = "completed"
+    rejected = "rejected"
+
+
+def validate_email_for_mvp(value: str) -> str:
+    normalized = value.strip()
+    if not normalized or "@" not in normalized:
+        raise ValueError("requester_email must be a valid email address")
+    local_part, domain = normalized.rsplit("@", 1)
+    if not local_part or "." not in domain or domain.startswith(".") or domain.endswith("."):
+        raise ValueError("requester_email must be a valid email address")
+    return normalized
+
+
+def ensure_timezone_aware(value: datetime | None) -> datetime | None:
+    if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 class OrganizationResponse(BaseModel):
@@ -147,3 +189,110 @@ class ScanUploadResponse(ScanResponse):
 
 class ScanDetailResponse(ScanResponse):
     summary: ScanSummary
+
+
+class DataRequestCreate(BaseModel):
+    request_type: DataRequestType
+    requester_name: str | None = Field(default=None, max_length=255)
+    requester_email: str = Field(min_length=3, max_length=320)
+    requester_identifier: str | None = Field(default=None, max_length=255)
+    request_details: str | None = Field(default=None, max_length=5000)
+    due_date: datetime | None = None
+    assigned_to: str | None = Field(default=None, max_length=255)
+
+    @field_validator("requester_email")
+    @classmethod
+    def requester_email_must_look_valid(cls, value: str) -> str:
+        return validate_email_for_mvp(value)
+
+
+class DataRequestUpdate(BaseModel):
+    status: DataRequestStatus | None = None
+    assigned_to: str | None = Field(default=None, max_length=255)
+    due_date: datetime | None = None
+    request_details: str | None = Field(default=None, max_length=5000)
+
+
+class DataRequestNoteCreate(BaseModel):
+    note: str = Field(min_length=1, max_length=5000)
+    created_by: str | None = Field(default=None, max_length=255)
+
+    @field_validator("note")
+    @classmethod
+    def note_cannot_be_blank(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("note cannot be empty")
+        return normalized
+
+
+class DataRequestNoteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    data_request_id: UUID
+    note: str
+    created_by: str | None
+    created_at: datetime
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class DataRequestAuditEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    data_request_id: UUID
+    event_type: DataRequestAuditEventType
+    message: str
+    metadata: dict[str, object] | None = Field(default=None, validation_alias="event_metadata")
+    created_at: datetime
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class DataRequestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    project_id: UUID
+    request_type: DataRequestType
+    status: DataRequestStatus
+    requester_name: str | None
+    requester_email: str
+    requester_identifier: str | None
+    request_details: str | None
+    due_date: datetime | None
+    assigned_to: str | None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+
+    @field_validator("due_date", "created_at", "updated_at", "completed_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class DataRequestDetailResponse(DataRequestResponse):
+    notes: list[DataRequestNoteResponse]
+    audit_events: list[DataRequestAuditEventResponse]
+
+
+class DataRequestListResponse(BaseModel):
+    items: list[DataRequestResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class PublicDataRequestConfirmation(BaseModel):
+    request_id: UUID
+    status: Literal["new"]
+    message: str

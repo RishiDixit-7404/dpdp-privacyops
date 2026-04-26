@@ -2,6 +2,16 @@ export type ScanType = "csv" | "postgres" | "json";
 export type SourceType = "csv" | "postgres" | "json";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type DetectionMethod = "column_name" | "regex_value" | "combined";
+export type DataRequestType = "access" | "correction" | "deletion" | "consent_withdrawal" | "grievance";
+export type DataRequestStatus = "new" | "verifying" | "in_progress" | "completed" | "rejected";
+export type DataRequestAuditEventType =
+  | "created"
+  | "status_changed"
+  | "note_added"
+  | "assigned"
+  | "due_date_changed"
+  | "completed"
+  | "rejected";
 
 export type PiiType =
   | "email"
@@ -103,3 +113,82 @@ export interface FindingFilters {
   offset?: number;
 }
 
+export interface DataRequest {
+  id: string;
+  project_id: string;
+  request_type: DataRequestType;
+  status: DataRequestStatus;
+  requester_name: string | null;
+  requester_email: string;
+  requester_identifier: string | null;
+  request_details: string | null;
+  due_date: string | null;
+  assigned_to: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface DataRequestNote {
+  id: string;
+  data_request_id: string;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface DataRequestAuditEvent {
+  id: string;
+  data_request_id: string;
+  event_type: DataRequestAuditEventType;
+  message: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface DataRequestDetail extends DataRequest {
+  notes: DataRequestNote[];
+  audit_events: DataRequestAuditEvent[];
+}
+
+export interface DataRequestListResponse {
+  items: DataRequest[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface DataRequestFilters {
+  status?: DataRequestStatus;
+  request_type?: DataRequestType;
+  limit?: number;
+  offset?: number;
+}
+
+export interface DataRequestCreateInput {
+  request_type: DataRequestType;
+  requester_name?: string | null;
+  requester_email: string;
+  requester_identifier?: string | null;
+  request_details?: string | null;
+  due_date?: string | null;
+  assigned_to?: string | null;
+}
+
+export interface DataRequestUpdateInput {
+  status?: DataRequestStatus;
+  assigned_to?: string | null;
+  due_date?: string | null;
+  request_details?: string | null;
+}
+
+export interface DataRequestNoteCreateInput {
+  note: string;
+  created_by?: string | null;
+}
+
+export interface PublicDataRequestConfirmation {
+  request_id: string;
+  status: "new";
+  message: string;
+}

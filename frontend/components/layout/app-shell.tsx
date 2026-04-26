@@ -1,9 +1,21 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { TopNav } from "@/components/layout/top-nav";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  if (pathname.startsWith("/public/")) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main>{children}</main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-surface">
@@ -24,4 +36,3 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
-

@@ -2,7 +2,7 @@
 
 Next.js dashboard v0 for the DPDP PrivacyOps data map.
 
-The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, and filter the personal-data inventory by risk, PII type, source type, and scan.
+The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, and track User Data Requests in the DSR Inbox v0.
 
 Auth is not implemented yet. This is a local MVP dashboard.
 
@@ -53,6 +53,45 @@ dpdp-scanner scan-json \
 3. Open the dashboard and create a project.
 4. Upload `/tmp/findings_logs.json` from the project detail page.
 5. Review scans, summaries, findings, filters, and masked examples.
+6. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
+
+## DSR Inbox
+
+Admin dashboard route:
+
+```text
+/projects/<PROJECT_ID>/requests
+```
+
+Request detail route:
+
+```text
+/projects/<PROJECT_ID>/requests/<REQUEST_ID>
+```
+
+Public privacy request intake route:
+
+```text
+/public/projects/<PROJECT_ID>/privacy-request
+```
+
+The inbox supports these request types:
+
+- access
+- correction
+- deletion
+- consent withdrawal
+- grievance
+
+The workflow statuses are:
+
+- new
+- verifying
+- in progress
+- completed
+- rejected
+
+DSR Inbox v0 is tracking and evidence only. It does not perform automatic deletion, send email notifications, automate identity verification, or add auth.
 
 ## Commands
 
@@ -70,5 +109,5 @@ npm run lint
 - The dashboard does not write uploaded scanner JSON to `localStorage` or `sessionStorage`.
 - The dashboard does not print uploaded file contents to the console.
 - The UI displays only backend-returned metadata and masked examples.
+- Privacy request payloads are sent only to the configured backend API and are not stored in browser storage.
 - No telemetry or analytics are included.
-
