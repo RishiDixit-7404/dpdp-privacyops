@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ from app.schemas import (
     ConsentStatusResponse,
     ConsentSummaryResponse,
 )
+from app.services.api_keys import authenticate_project_api_key
 
 
 router = APIRouter(tags=["consent"])
@@ -31,13 +32,41 @@ def _get_project_or_404(db: Session, project_id: UUID) -> models.Project:
     return project
 
 
+def _api_key_from_headers(authorization: str | None, x_dpdp_api_key: str | None) -> str | None:
+    if x_dpdp_api_key:
+        return x_dpdp_api_key.strip()
+    if authorization:
+        scheme, _, token = authorization.partition(" ")
+        if scheme.lower() == "bearer" and token.strip():
+            return token.strip()
+    return None
+
+
+def _require_consent_write_api_key(
+    db: Session,
+    project_id: UUID,
+    authorization: str | None,
+    x_dpdp_api_key: str | None,
+) -> models.ProjectApiKey:
+    api_key = _api_key_from_headers(authorization, x_dpdp_api_key)
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Valid project API key required")
+    stored_key = authenticate_project_api_key(db, project_id, api_key)
+    if stored_key is None:
+        raise HTTPException(status_code=401, detail="Valid project API key required")
+    return stored_key
+
+
 @router.post("/projects/{project_id}/consent-events", response_model=ConsentEventResponse, status_code=201)
 def create_consent_event(
     project_id: UUID,
     payload: ConsentEventCreate,
+    authorization: str | None = Header(default=None),
+    x_dpdp_api_key: str | None = Header(default=None, alias="X-DPDP-API-Key"),
     db: Session = Depends(get_db),
 ) -> models.ConsentEvent:
     _get_project_or_404(db, project_id)
+    _require_consent_write_api_key(db, project_id, authorization, x_dpdp_api_key)
     event = models.ConsentEvent(
         project_id=project_id,
         external_user_id=payload.external_user_id,

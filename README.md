@@ -8,11 +8,11 @@ Current stage:
 - **Stage 2 backend foundation**: FastAPI API for accepting scanner JSON uploads, storing scans/findings, and serving future dashboard data.
 - **Stage 2 dashboard v0**: Next.js local dashboard for projects, scanner uploads, scans, findings, and filters.
 - **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
-- **Stage 4 Consent Event API v0**: append-only consent event ledger, dashboard view, and Node SDK wrapper.
+- **Stage 4 Consent Event API v0**: append-only consent event ledger, project API key protection for writes, dashboard view, and Node SDK wrapper.
 - **Stage 5 Evidence Report v0**: JSON-first technical evidence report for scans, findings, DSR workflow, consent events, remediation, and readiness gaps.
 - **MVP demo hardening**: local Postgres verification, deterministic demo seed/reset scripts, privacy smoke checks, and a 3-minute demo script.
 
-This repository does not include auth, billing, server-side PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
+This repository does not include full user login/auth, billing, server-side PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
 ## Privacy Guarantee
 
@@ -185,6 +185,7 @@ The backend lives in `backend/` and provides:
 - paginated findings responses for dashboard tables
 - DSR Inbox APIs for User Data Requests, notes, and audit events
 - Consent Event APIs for append-only granted/withdrawn events, current status lookup, and event-count summaries
+- Project API key APIs for protecting consent event writes
 - Evidence Report API for DPDP readiness evidence across scans, risk inventory, DSR workflow, consent events, remediation, and gaps
 
 The scanner-to-backend flow is:
@@ -289,6 +290,9 @@ Consent Event API v0 is an append-only developer API. Customers record consent e
 
 Backend endpoints:
 
+- `POST /projects/{project_id}/api-keys`
+- `GET /projects/{project_id}/api-keys`
+- `POST /projects/{project_id}/api-keys/{api_key_id}/revoke`
 - `POST /projects/{project_id}/consent-events`
 - `GET /projects/{project_id}/consent-events`
 - `GET /projects/{project_id}/consent-status`
@@ -299,6 +303,40 @@ Dashboard route:
 - `/projects/<PROJECT_ID>/consent`
 
 Privacy rule: consent events use `external_user_id` only. They do not require email, phone, or name.
+
+Consent write requests require a project API key. API keys are stored hashed; the raw key is returned only once when created.
+
+Create an API key:
+
+```bash
+curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/api-keys \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Production consent writer"}'
+```
+
+Copy the returned `api_key` immediately. It will not be shown again.
+
+Record a consent event with the API key:
+
+```bash
+curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY>" \
+  -d '{
+    "external_user_id": "usr_123",
+    "purpose": "marketing_whatsapp",
+    "status": "granted",
+    "notice_version": "v2.1",
+    "source": "web_signup",
+    "occurred_at": "2026-04-26T10:30:00+05:30",
+    "metadata": {
+      "ip_country": "IN",
+      "ui_surface": "signup_checkbox"
+    }
+  }'
+```
+
+The backend also accepts `X-DPDP-API-Key: <API_KEY>` for consent writes. Revoked keys cannot write events. Read endpoints remain unauthenticated in the local MVP.
 
 Consent summary counts are event counts in v0, not unique-user counts.
 
@@ -321,7 +359,8 @@ import { DpdpPrivacyOpsClient } from "@dpdp-privacyops/node";
 
 const client = new DpdpPrivacyOpsClient({
   apiBaseUrl: "http://localhost:8000",
-  projectId: "project-uuid"
+  projectId: "project-uuid",
+  apiKey: "dpdp_live_..."
 });
 
 await client.trackConsent({
@@ -332,7 +371,7 @@ await client.trackConsent({
 });
 ```
 
-API key enforcement is not implemented yet; the SDK accepts `apiKey` for future compatibility.
+`apiKey` is required for SDK write calls such as `trackConsent` and `withdrawConsent`. Read calls such as `getConsentStatus` can still be used without a key in the local MVP.
 
 ## Evidence Report v0
 
@@ -443,14 +482,13 @@ docker run --rm \
 
 ## Known Limitations
 
-- no auth
+- no full user login/auth
 - no billing
 - no hosted deployment
 - no server-side PDF generation
 - no automatic deletion across systems
 - no email notifications
 - no external integrations
-- no API key enforcement for the consent SDK yet
 - Next.js is pinned for the current local Node 18 path and must be upgraded before production or any customer-facing deployment
 
 ## Production Hardening Checklist

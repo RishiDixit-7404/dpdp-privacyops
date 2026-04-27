@@ -12,6 +12,7 @@ import { consentStatusLabel, consentStatusOptions } from "@/lib/format";
 import type { ConsentEvent, ConsentEventCreate, ConsentStatus } from "@/lib/types";
 
 interface ConsentEventFormProps {
+  apiKey: string;
   projectId: string;
   onCreated: (event: ConsentEvent) => void;
 }
@@ -30,7 +31,7 @@ const initialForm = {
   metadata: ""
 };
 
-export function ConsentEventForm({ projectId, onCreated }: ConsentEventFormProps) {
+export function ConsentEventForm({ apiKey, projectId, onCreated }: ConsentEventFormProps) {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +40,10 @@ export function ConsentEventForm({ projectId, onCreated }: ConsentEventFormProps
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (!apiKey.trim()) {
+      setError("Enter a project API key before recording consent events.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       let metadata: Record<string, unknown> | null = null;
@@ -59,7 +64,7 @@ export function ConsentEventForm({ projectId, onCreated }: ConsentEventFormProps
         occurred_at: new Date(form.occurred_at).toISOString(),
         metadata
       };
-      const response = await createConsentEvent(projectId, payload);
+      const response = await createConsentEvent(projectId, payload, apiKey.trim());
       setCreated(response);
       setForm({ ...initialForm, occurred_at: defaultOccurredAt() });
       onCreated(response);

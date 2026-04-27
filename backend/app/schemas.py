@@ -106,6 +106,39 @@ class ProjectResponse(BaseModel):
     organization: OrganizationResponse
 
 
+class ApiKeyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+
+    @field_validator("name")
+    @classmethod
+    def name_cannot_be_blank(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("name cannot be empty")
+        return normalized
+
+
+class ApiKeyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    project_id: UUID
+    name: str
+    key_prefix: str
+    created_at: datetime
+    revoked_at: datetime | None
+    last_used_at: datetime | None
+
+    @field_validator("created_at", "revoked_at", "last_used_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ApiKeyCreateResponse(ApiKeyResponse):
+    api_key: str
+
+
 class ScannerFindingUpload(BaseModel):
     finding_id: str = Field(min_length=1)
     source_type: SourceType

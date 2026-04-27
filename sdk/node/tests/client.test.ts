@@ -17,7 +17,11 @@ describe("DpdpPrivacyOpsClient", () => {
   it("trackConsent sends a granted event", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: "evt_1", status: "granted" }));
     vi.stubGlobal("fetch", fetchMock);
-    const client = new DpdpPrivacyOpsClient({ apiBaseUrl: "https://api.example.com", projectId: "project_123" });
+    const client = new DpdpPrivacyOpsClient({
+      apiBaseUrl: "https://api.example.com",
+      projectId: "project_123",
+      apiKey: "dpdp_live_test"
+    });
 
     await client.trackConsent({
       externalUserId: "usr_123",
@@ -30,6 +34,7 @@ describe("DpdpPrivacyOpsClient", () => {
       "https://api.example.com/projects/project_123/consent-events",
       expect.objectContaining({ method: "POST" })
     );
+    expect(fetchMock.mock.calls[0][1].headers).toMatchObject({ Authorization: "Bearer dpdp_live_test" });
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string) as Record<string, unknown>;
     expect(body.status).toBe("granted");
     expect(body.external_user_id).toBe("usr_123");
@@ -39,7 +44,11 @@ describe("DpdpPrivacyOpsClient", () => {
   it("withdrawConsent sends a withdrawn event", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: "evt_2", status: "withdrawn" }));
     vi.stubGlobal("fetch", fetchMock);
-    const client = new DpdpPrivacyOpsClient({ apiBaseUrl: "https://api.example.com", projectId: "project_123" });
+    const client = new DpdpPrivacyOpsClient({
+      apiBaseUrl: "https://api.example.com",
+      projectId: "project_123",
+      apiKey: "dpdp_live_test"
+    });
 
     await client.withdrawConsent({
       externalUserId: "usr_123",
@@ -66,7 +75,11 @@ describe("DpdpPrivacyOpsClient", () => {
   it("serializes Date occurredAt to ISO", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: "evt_3", status: "granted" }));
     vi.stubGlobal("fetch", fetchMock);
-    const client = new DpdpPrivacyOpsClient({ apiBaseUrl: "https://api.example.com", projectId: "project_123" });
+    const client = new DpdpPrivacyOpsClient({
+      apiBaseUrl: "https://api.example.com",
+      projectId: "project_123",
+      apiKey: "dpdp_live_test"
+    });
 
     await client.trackConsent({
       externalUserId: "usr_123",
@@ -82,7 +95,11 @@ describe("DpdpPrivacyOpsClient", () => {
   it("throws a typed error on non-2xx without leaking the request payload", async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ detail: "Invalid request" }, { status: 422 }));
     vi.stubGlobal("fetch", fetchMock);
-    const client = new DpdpPrivacyOpsClient({ apiBaseUrl: "https://api.example.com", projectId: "project_123" });
+    const client = new DpdpPrivacyOpsClient({
+      apiBaseUrl: "https://api.example.com",
+      projectId: "project_123",
+      apiKey: "dpdp_live_test"
+    });
 
     try {
       await client.trackConsent({
@@ -96,5 +113,20 @@ describe("DpdpPrivacyOpsClient", () => {
       expect((error as DpdpPrivacyOpsError).status).toBe(422);
       expect((error as Error).message).not.toContain("usr_sensitive");
     }
+  });
+
+  it("requires apiKey before writing consent events", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new DpdpPrivacyOpsClient({ apiBaseUrl: "https://api.example.com", projectId: "project_123" });
+
+    await expect(
+      client.trackConsent({
+        externalUserId: "usr_123",
+        purpose: "marketing_whatsapp",
+        noticeVersion: "v2.1"
+      })
+    ).rejects.toThrow("apiKey is required to write consent events");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

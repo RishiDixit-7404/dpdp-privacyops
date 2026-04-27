@@ -1,4 +1,6 @@
 import type {
+  ApiKey,
+  ApiKeyCreateResponse,
   ConsentEvent,
   ConsentEventCreate,
   ConsentEventFilters,
@@ -118,6 +120,23 @@ export function getProject(projectId: string): Promise<Project> {
   return request<Project>(`/projects/${projectId}`);
 }
 
+export function getProjectApiKeys(projectId: string): Promise<ApiKey[]> {
+  return request<ApiKey[]>(`/projects/${projectId}/api-keys`);
+}
+
+export function createProjectApiKey(projectId: string, name: string): Promise<ApiKeyCreateResponse> {
+  return request<ApiKeyCreateResponse>(`/projects/${projectId}/api-keys`, {
+    method: "POST",
+    body: JSON.stringify({ name })
+  });
+}
+
+export function revokeProjectApiKey(projectId: string, apiKeyId: string): Promise<ApiKey> {
+  return request<ApiKey>(`/projects/${projectId}/api-keys/${apiKeyId}/revoke`, {
+    method: "POST"
+  });
+}
+
 export function getProjectScans(projectId: string): Promise<Scan[]> {
   return request<Scan[]>(`/projects/${projectId}/scans`);
 }
@@ -210,9 +229,12 @@ export function addDataRequestNote(requestId: string, payload: DataRequestNoteCr
   });
 }
 
-export function createConsentEvent(projectId: string, payload: ConsentEventCreate): Promise<ConsentEvent> {
+export function createConsentEvent(projectId: string, payload: ConsentEventCreate, apiKey: string): Promise<ConsentEvent> {
   return request<ConsentEvent>(`/projects/${projectId}/consent-events`, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`
+    },
     body: JSON.stringify(payload)
   });
 }

@@ -53,6 +53,9 @@ export class DpdpPrivacyOpsClient {
   }
 
   private createConsentEvent(input: ConsentEventInput, status: ConsentStatus): Promise<ConsentEventResponse> {
+    if (!this.apiKey) {
+      throw new Error("apiKey is required to write consent events");
+    }
     const occurredAt = input.occurredAt instanceof Date
       ? input.occurredAt.toISOString()
       : input.occurredAt ?? new Date().toISOString();

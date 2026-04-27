@@ -1,10 +1,10 @@
 # DPDP PrivacyOps Backend
 
-FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0, Consent Event API v0, and Evidence Report v0.
+FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0, Consent Event API v0 with API-key-protected writes, and Evidence Report v0.
 
-It does not include auth, billing, server-side PDF generation, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
+It does not include full user login/auth, billing, server-side PDF generation, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
 
-Auth is intentionally not implemented yet. These APIs are the local/backend foundation for the upcoming dashboard and should not be exposed publicly without an auth layer.
+Full user auth is intentionally not implemented yet. Consent event writes require project API keys, but the remaining APIs are the local/backend foundation for the dashboard and should not be exposed publicly without a full auth layer.
 
 ## Setup
 
@@ -134,6 +134,9 @@ The reset script has a hard guard: it deletes only organizations named `Acme EdT
 - `POST /projects`
 - `GET /projects`
 - `GET /projects/{project_id}`
+- `POST /projects/{project_id}/api-keys`
+- `GET /projects/{project_id}/api-keys`
+- `POST /projects/{project_id}/api-keys/{api_key_id}/revoke`
 - `POST /projects/{project_id}/scans/upload`
 - `GET /projects/{project_id}/scans`
 - `GET /scans/{scan_id}`
@@ -299,6 +302,18 @@ The public endpoint only creates a request and returns a minimal confirmation. I
 
 Consent Event API v0 is an append-only ledger. There are no update or delete APIs for consent events.
 
+Consent event writes require a project API key. API keys are stored hashed and the raw key is returned only once at creation time.
+
+Create an API key:
+
+```bash
+curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/api-keys \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Production consent writer"}'
+```
+
+Use the returned key with `Authorization: Bearer <API_KEY>` or `X-DPDP-API-Key: <API_KEY>` when creating consent events. Revoked keys cannot write events. Read endpoints remain unauthenticated in the local MVP.
+
 Consent event statuses:
 
 - `granted`
@@ -345,7 +360,7 @@ Consent summary counts are event counts in v0, not unique-user counts.
 
 Privacy rule: consent events use `external_user_id` only. The API does not ask for email, phone, or name. Optional metadata is capped at 10KB.
 
-Auth and API key enforcement are intentionally not implemented yet.
+Full user login/auth is intentionally not implemented yet. API key enforcement currently protects consent event writes only.
 
 ## Evidence Report API
 

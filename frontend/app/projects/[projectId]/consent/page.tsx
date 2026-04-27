@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
+import { ApiKeyManagement } from "@/components/api-keys/api-key-management";
 import { ConsentEventForm } from "@/components/consent/consent-event-form";
 import { ConsentEventList } from "@/components/consent/consent-event-list";
 import { ConsentStatusChecker } from "@/components/consent/consent-status-checker";
@@ -21,6 +22,7 @@ export default function ProjectConsentPage({ params }: { params: { projectId: st
   const [summary, setSummary] = useState<ConsentSummaryResponse | null>(null);
   const [filters, setFilters] = useState<ConsentEventFilters>({ limit: 100, offset: 0 });
   const [draftFilters, setDraftFilters] = useState<ConsentEventFilters>({ limit: 100, offset: 0 });
+  const [writeApiKey, setWriteApiKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,13 +73,35 @@ export default function ProjectConsentPage({ params }: { params: { projectId: st
 
       <ConsentSummaryCards summary={summary} />
 
+      <Card>
+        <CardHeader>
+          <CardTitle>API keys</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="text-sm text-muted-foreground">
+            Local MVP admin controls for consent write API keys. This protects consent event writes but is not full user login.
+          </div>
+          <ApiKeyManagement onCreated={setWriteApiKey} projectId={params.projectId} />
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Record consent event</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="grid gap-4">
+            <label className="space-y-1 text-sm">
+              <span className="text-xs font-medium text-muted-foreground">Project API key for this browser session</span>
+              <Input
+                onChange={(event) => setWriteApiKey(event.target.value)}
+                placeholder="dpdp_live_..."
+                type="password"
+                value={writeApiKey}
+              />
+            </label>
             <ConsentEventForm
+              apiKey={writeApiKey}
               onCreated={() => {
                 void loadData(filters);
               }}

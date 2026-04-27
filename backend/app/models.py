@@ -59,6 +59,7 @@ class Project(Base):
     scans: Mapped[list[Scan]] = relationship(back_populates="project", cascade="all, delete-orphan")
     data_requests: Mapped[list[DataRequest]] = relationship(back_populates="project", cascade="all, delete-orphan")
     consent_events: Mapped[list[ConsentEvent]] = relationship(back_populates="project", cascade="all, delete-orphan")
+    api_keys: Mapped[list[ProjectApiKey]] = relationship(back_populates="project", cascade="all, delete-orphan")
 
 
 class Scan(Base):
@@ -246,3 +247,29 @@ class ConsentEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     project: Mapped[Project] = relationship(back_populates="consent_events")
+
+
+class ProjectApiKey(Base):
+    __tablename__ = "project_api_keys"
+    __table_args__ = (
+        CheckConstraint("length(trim(name)) > 0", name="ck_project_api_keys_name_not_empty"),
+        CheckConstraint("length(trim(key_prefix)) > 0", name="ck_project_api_keys_key_prefix_not_empty"),
+        CheckConstraint("length(trim(key_hash)) > 0", name="ck_project_api_keys_key_hash_not_empty"),
+        Index("ix_project_api_keys_project_prefix", "project_id", "key_prefix"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    project_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    key_prefix: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    key_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    project: Mapped[Project] = relationship(back_populates="api_keys")

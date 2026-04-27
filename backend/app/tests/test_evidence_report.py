@@ -48,6 +48,9 @@ def create_consent_event(
     status: str = "granted",
     purpose: str = "marketing_whatsapp",
 ) -> dict[str, object]:
+    api_key_response = client.post(f"/projects/{project_id}/api-keys", json={"name": "Report test writer"})
+    assert api_key_response.status_code == 201
+    api_key = api_key_response.json()["api_key"]
     response = client.post(
         f"/projects/{project_id}/consent-events",
         json={
@@ -59,6 +62,7 @@ def create_consent_event(
             "occurred_at": "2026-04-26T10:30:00+05:30",
             "metadata": {"ip_country": "IN"},
         },
+        headers={"Authorization": f"Bearer {api_key}"},
     )
     assert response.status_code == 201
     return response.json()

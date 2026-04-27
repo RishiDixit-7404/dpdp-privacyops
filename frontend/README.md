@@ -4,7 +4,7 @@ Next.js dashboard v0 for the DPDP PrivacyOps data map.
 
 The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, review consent events, and view a technical Evidence Report.
 
-Auth is not implemented yet. This is a local MVP dashboard.
+Full user auth is not implemented yet. Consent event writes require project API keys, but this is still a local MVP dashboard.
 
 ## Setup
 
@@ -78,7 +78,7 @@ dpdp-scanner scan-json \
 4. Upload `/tmp/findings_logs.json` from the project detail page.
 5. Review scans, summaries, findings, filters, and masked examples.
 6. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
-7. Open Consent Events from the project page to record granted/withdrawn events and check current status by user and purpose.
+7. Open Consent Events from the project page to create an API key, record granted/withdrawn events, and check current status by user and purpose.
 8. Open Evidence Report from the project page to review DPDP readiness evidence and print the report from the browser.
 
 ## DSR Inbox
@@ -129,6 +129,7 @@ Admin dashboard route:
 
 The consent page includes:
 
+- project API key list/create/revoke controls
 - summary cards
 - append-only event creation
 - current status checker by `external_user_id` and purpose
@@ -142,6 +143,8 @@ Consent statuses:
 Consent Event API v0 is an event ledger and developer API. It is not a cookie banner or full preference center. Summary counts are event counts, not unique-user counts in v0.
 
 Privacy rule: the consent form asks for `external_user_id` only. It does not ask for email, phone, or name.
+
+API key rule: create a project API key on the consent page and copy it immediately. The raw key is shown only once and is required to record consent events from the dashboard or SDK.
 
 ## Evidence Report
 
@@ -205,7 +208,7 @@ python scripts/privacy_smoke_check.py
 
 ## Known Demo Limitations
 
-- Auth is not implemented yet.
+- Full user auth is not implemented yet.
 - The dashboard is local-only for the MVP demo.
 - Evidence Report v0 uses browser print-to-PDF; there is no server-side PDF generation.
 - Automatic deletion across systems and email notifications are not implemented.

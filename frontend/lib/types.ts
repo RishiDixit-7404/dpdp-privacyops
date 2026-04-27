@@ -51,6 +51,20 @@ export interface ProjectCreateInput {
   description?: string | null;
 }
 
+export interface ApiKey {
+  id: string;
+  project_id: string;
+  name: string;
+  key_prefix: string;
+  created_at: string;
+  revoked_at: string | null;
+  last_used_at: string | null;
+}
+
+export interface ApiKeyCreateResponse extends ApiKey {
+  api_key: string;
+}
+
 export interface ScanSummary {
   total_findings: number;
   counts_by_risk_level: Record<RiskLevel, number>;

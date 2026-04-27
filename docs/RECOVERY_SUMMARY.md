@@ -33,11 +33,11 @@ Recovery date: 2026-04-27
 - Backend framework: FastAPI with Uvicorn.
 - Database: SQLAlchemy-supported database, default SQLite for quick local development, Postgres 16 for local Docker/dev.
 - ORM / migrations: SQLAlchemy 2.x ORM and Alembic migrations in `backend/alembic`.
-- Auth approach: no auth implemented. READMEs explicitly state auth is intentionally absent and APIs are local/MVP foundation only.
+- Auth approach: project API keys now protect consent event writes. Full user login, sessions, and project-level user access control are still not implemented.
 - Job queue: none detected.
 - Scanner language/runtime: Python 3.11+, Typer CLI, pandas, pydantic, psycopg.
 - Report generation: backend generates JSON-first evidence report on demand; frontend renders it and uses browser `window.print()` for print-to-PDF. No server-side PDF generation.
-- SDK folder: `sdk/node/`, TypeScript SDK for the Consent Event API. It accepts optional `apiKey` but backend API key enforcement is not implemented yet.
+- SDK folder: `sdk/node/`, TypeScript SDK for the Consent Event API. SDK write calls now require `apiKey` and send it as `Authorization: Bearer <apiKey>`.
 - Docker/local deployment: `docker-compose.yml` starts Postgres only; `docker/scanner.Dockerfile` builds scanner CLI image. No full app deployment stack detected.
 
 ## Package Managers And Dependency Files
@@ -94,7 +94,7 @@ Tests were inspected but not executed during this recovery pass, to avoid instal
 | PII Discovery Scanner | complete | Python scanner has CLI commands for CSV, JSON/JSONL, and Postgres metadata, masking, output models, risk scoring, fixtures, and tests. |
 | Data Map Dashboard | partially complete | Next.js dashboard supports projects, scan uploads, scan list, summaries, findings filters/table, DSR, consent, and evidence report views. It is still a local MVP dashboard, not a full production data map. |
 | DSR Inbox | partially complete | Backend CRUD/workflow APIs and frontend inbox/detail/public intake exist. Identity verification automation, auth, email, and automatic deletion are intentionally missing. |
-| Consent Event API | partially complete | Append-only backend API, current status, summaries, frontend ledger, and Node SDK exist. API key enforcement and full preference-center/cookie-banner capabilities are missing. |
+| Consent Event API | partially complete | Append-only backend API, current status, summaries, frontend ledger, Node SDK, and API key enforcement for writes exist. Full preference-center/cookie-banner capabilities are missing. |
 | Evidence Report | partially complete | Backend builds report JSON on demand and frontend renders sections with browser print. No persisted report records or server-side PDF generation. |
 | Auth / organisations / projects | partially complete | Organizations and projects exist in models/APIs/UI. Auth and project-level access control are missing. |
 | Scan upload flow | complete | Backend `POST /projects/{project_id}/scans/upload` validates scanner contract and stores scans/findings; frontend uploads scanner JSON. |
@@ -108,7 +108,7 @@ Tests were inspected but not executed during this recovery pass, to avoid instal
 ## Missing Modules / Known Gaps
 
 - Authentication, login, sessions, users, and project-level access control.
-- API key enforcement for SDK/API clients.
+- Broader API key coverage beyond consent writes.
 - Billing.
 - Hosted deployment configuration beyond local Postgres and scanner Docker image.
 - Job queue / background worker.
@@ -301,7 +301,7 @@ bash scripts/demo_local.sh
 
 ## Known Blockers
 
-- No auth layer, no access control, and no API key enforcement mean the app should remain local-only.
+- No full user auth or project-level access control exists. Consent writes now require project API keys, but the app should remain local-only until login/auth is implemented.
 - Next.js version is old and documented as needing upgrade before hosted/customer-facing deployment.
 - Full local verification was not run during this recovery pass because the requested scope was safe inspection and documentation only.
 - Any Postgres migration/test verification requires Docker and local database startup.
@@ -309,7 +309,7 @@ bash scripts/demo_local.sh
 
 ## Likely Next Build Step
 
-The next highest-value build step is to add auth and project-level access control, including API key enforcement for the consent endpoint/SDK, because the current MVP already has useful local workflows but cannot safely be exposed beyond a trusted local environment.
+The next highest-value build step is to add full auth and project-level access control around the existing project workflows and API key management endpoints, because consent writes are now API-key protected but admin access is still local-MVP only.
 
 Before that feature work, run the existing verification matrix once on the recovered machine:
 
@@ -325,12 +325,12 @@ python scripts/privacy_smoke_check.py
 ```text
 You are working on the DPDP PrivacyOps repo. Read docs/RECOVERY_SUMMARY.md first. Do not refactor broadly.
 
-Goal: add a minimal local-MVP auth and project access-control foundation.
+Goal: add a minimal local-MVP user auth and project access-control foundation.
 
 Tasks:
 1. Inspect backend models, routers, tests, and frontend API usage.
 2. Propose a small auth/API-key design that fits the existing FastAPI + SQLAlchemy + Alembic stack.
-3. Implement only the first safe increment: API key enforcement for consent event writes and SDK support, with tests and docs.
+3. Implement only the first safe increment: authenticated admin access for project API key management and project views, with tests and docs.
 4. Do not add billing, hosted deployment, or unrelated UI redesign.
 5. Run the relevant tests and report exact commands/results.
 ```

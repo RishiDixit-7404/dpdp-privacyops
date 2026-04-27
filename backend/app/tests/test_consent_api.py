@@ -27,14 +27,38 @@ def consent_payload(
     }
 
 
-def create_consent_event(client: TestClient, project_id: str, **kwargs: object) -> dict[str, object]:
-    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload(**kwargs))
+def create_api_key(client: TestClient, project_id: str, name: str = "Consent writer") -> str:
+    response = client.post(f"/projects/{project_id}/api-keys", json={"name": name})
+    assert response.status_code == 201
+    return str(response.json()["api_key"])
+
+
+def api_key_headers(client: TestClient, project_id: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {create_api_key(client, project_id)}"}
+
+
+def create_consent_event(
+    client: TestClient,
+    project_id: str,
+    api_key: str | None = None,
+    **kwargs: object,
+) -> dict[str, object]:
+    key = api_key or create_api_key(client, project_id)
+    response = client.post(
+        f"/projects/{project_id}/consent-events",
+        json=consent_payload(**kwargs),
+        headers={"Authorization": f"Bearer {key}"},
+    )
     assert response.status_code == 201
     return response.json()
 
 
 def test_create_consent_event(client: TestClient, project_id: str) -> None:
-    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload())
+    response = client.post(
+        f"/projects/{project_id}/consent-events",
+        json=consent_payload(),
+        headers=api_key_headers(client, project_id),
+    )
 
     assert response.status_code == 201
     body = response.json()
@@ -53,26 +77,49 @@ def test_project_not_found_returns_404(client: TestClient) -> None:
     assert response.json()["detail"] == "Project not found"
 
 
+def test_create_consent_event_without_api_key_returns_401(client: TestClient, project_id: str) -> None:
+    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload())
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Valid project API key required"
+
+
 def test_invalid_status_rejected(client: TestClient, project_id: str) -> None:
-    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload(status="pending"))
+    response = client.post(
+        f"/projects/{project_id}/consent-events",
+        json=consent_payload(status="pending"),
+        headers=api_key_headers(client, project_id),
+    )
 
     assert response.status_code == 422
 
 
 def test_empty_external_user_id_rejected(client: TestClient, project_id: str) -> None:
-    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload(external_user_id="  "))
+    response = client.post(
+        f"/projects/{project_id}/consent-events",
+        json=consent_payload(external_user_id="  "),
+        headers=api_key_headers(client, project_id),
+    )
 
     assert response.status_code == 422
 
 
 def test_empty_purpose_rejected(client: TestClient, project_id: str) -> None:
-    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload(purpose="  "))
+    response = client.post(
+        f"/projects/{project_id}/consent-events",
+        json=consent_payload(purpose="  "),
+        headers=api_key_headers(client, project_id),
+    )
 
     assert response.status_code == 422
 
 
 def test_empty_notice_version_rejected(client: TestClient, project_id: str) -> None:
-    response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload(notice_version="  "))
+    response = client.post(
+        f"/projects/{project_id}/consent-events",
+        json=consent_payload(notice_version="  "),
+        headers=api_key_headers(client, project_id),
+    )
 
     assert response.status_code == 422
 
@@ -81,6 +128,7 @@ def test_naive_occurred_at_rejected(client: TestClient, project_id: str) -> None
     response = client.post(
         f"/projects/{project_id}/consent-events",
         json=consent_payload(occurred_at="2026-04-26T10:30:00"),
+        headers=api_key_headers(client, project_id),
     )
 
     assert response.status_code == 422
@@ -90,7 +138,7 @@ def test_metadata_size_limit_enforced(client: TestClient, project_id: str) -> No
     payload = consent_payload()
     payload["metadata"] = {"large": "x" * (11 * 1024)}
 
-    response = client.post(f"/projects/{project_id}/consent-events", json=payload)
+    response = client.post(f"/projects/{project_id}/consent-events", json=payload, headers=api_key_headers(client, project_id))
 
     assert response.status_code == 422
     assert "x" * 64 not in response.text

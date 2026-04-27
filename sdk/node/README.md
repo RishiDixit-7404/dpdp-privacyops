@@ -28,7 +28,7 @@ import { DpdpPrivacyOpsClient } from "@dpdp-privacyops/node";
 const client = new DpdpPrivacyOpsClient({
   apiBaseUrl: "http://localhost:8000",
   projectId: "project-uuid",
-  apiKey: "optional-for-future"
+  apiKey: "dpdp_live_..."
 });
 
 await client.trackConsent({
@@ -57,6 +57,14 @@ const status = await client.getConsentStatus({
 
 `occurredAt` is optional. If omitted, the SDK sends the current time. A JavaScript `Date` is serialized to an ISO string.
 
+`apiKey` is required for write calls that create consent events, including `trackConsent` and `withdrawConsent`. The SDK sends it as:
+
+```text
+Authorization: Bearer <apiKey>
+```
+
+Read calls such as `getConsentStatus` can still be used without `apiKey` in the local MVP.
+
 ## Privacy Notes
 
 - Use `externalUserId`; do not send email, phone, or name.
@@ -66,7 +74,7 @@ const status = await client.getConsentStatus({
 
 ## Current Limitations
 
-- Auth/API key enforcement is not implemented by the backend yet.
+- Backend API key enforcement protects consent event writes, but this is not full user login/auth.
 - This is not a cookie banner or full preference center.
 - Consent summary counts in the API are event counts, not unique-user counts in v0.
-- The SDK is included in the local MVP demo, but production use requires backend API key enforcement and hosted deployment hardening first.
+- The SDK is included in the local MVP demo, but production use still requires hosted deployment hardening and full auth around admin workflows.
