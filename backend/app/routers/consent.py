@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import models
-from app.deps import get_db
+from app.deps import get_current_user, get_db
 from app.schemas import (
     ConsentEventCreate,
     ConsentEventListResponse,
@@ -19,6 +19,8 @@ from app.schemas import (
     ConsentStatusResponse,
     ConsentSummaryResponse,
 )
+from app.services.access_control import require_project_access
+from app.services.auth import verify_access_token
 from app.services.api_keys import authenticate_project_api_key
 
 
@@ -57,6 +59,28 @@ def _require_consent_write_api_key(
     return stored_key
 
 
+def _require_consent_status_access(
+    db: Session,
+    project_id: UUID,
+    authorization: str | None,
+    x_dpdp_api_key: str | None,
+) -> None:
+    api_key = _api_key_from_headers(authorization, x_dpdp_api_key)
+    if api_key and authenticate_project_api_key(db, project_id, api_key) is not None:
+        return
+
+    if authorization:
+        scheme, _, token = authorization.partition(" ")
+        if scheme.lower() == "bearer" and token.strip():
+            user_id = verify_access_token(token.strip())
+            user = db.get(models.User, user_id) if user_id is not None else None
+            if user is not None and user.disabled_at is None:
+                require_project_access(db, user, project_id)
+                return
+
+    raise HTTPException(status_code=401, detail="Authentication required")
+
+
 @router.post("/projects/{project_id}/consent-events", response_model=ConsentEventResponse, status_code=201)
 def create_consent_event(
     project_id: UUID,
@@ -92,8 +116,9 @@ def list_consent_events(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> ConsentEventListResponse:
-    _get_project_or_404(db, project_id)
+    require_project_access(db, current_user, project_id)
     filters = [models.ConsentEvent.project_id == project_id]
     if external_user_id:
         filters.append(models.ConsentEvent.external_user_id == external_user_id)
@@ -124,9 +149,12 @@ def get_consent_status(
     project_id: UUID,
     external_user_id: str = Query(min_length=1),
     purpose: str = Query(min_length=1),
+    authorization: str | None = Header(default=None),
+    x_dpdp_api_key: str | None = Header(default=None, alias="X-DPDP-API-Key"),
     db: Session = Depends(get_db),
 ) -> ConsentStatusResponse:
     _get_project_or_404(db, project_id)
+    _require_consent_status_access(db, project_id, authorization, x_dpdp_api_key)
     event = db.scalar(
         select(models.ConsentEvent)
         .where(
@@ -153,8 +181,12 @@ def get_consent_status(
 
 
 @router.get("/projects/{project_id}/consent-summary", response_model=ConsentSummaryResponse)
-def get_consent_summary(project_id: UUID, db: Session = Depends(get_db)) -> ConsentSummaryResponse:
-    _get_project_or_404(db, project_id)
+def get_consent_summary(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> ConsentSummaryResponse:
+    require_project_access(db, current_user, project_id)
     events = list(db.scalars(select(models.ConsentEvent).where(models.ConsentEvent.project_id == project_id)).all())
     purpose_counts: dict[str, dict[str, int]] = defaultdict(lambda: {"granted": 0, "withdrawn": 0})
     latest_by_purpose: dict[str, datetime] = {}

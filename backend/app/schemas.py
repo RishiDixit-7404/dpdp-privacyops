@@ -65,6 +65,12 @@ class ConsentStatus(StrEnum):
     withdrawn = "withdrawn"
 
 
+class MembershipRole(StrEnum):
+    owner = "owner"
+    admin = "admin"
+    member = "member"
+
+
 def validate_email_for_mvp(value: str) -> str:
     normalized = value.strip()
     if not normalized or "@" not in normalized:
@@ -104,6 +110,67 @@ class ProjectResponse(BaseModel):
     description: str | None
     created_at: datetime
     organization: OrganizationResponse
+
+
+class UserRegister(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=8, max_length=256)
+    full_name: str | None = Field(default=None, max_length=255)
+    organization_name: str | None = Field(default=None, max_length=255)
+
+    @field_validator("email")
+    @classmethod
+    def email_must_look_valid(cls, value: str) -> str:
+        return validate_email_for_mvp(value).lower()
+
+    @field_validator("organization_name")
+    @classmethod
+    def organization_name_cannot_be_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("organization_name cannot be empty")
+        return normalized
+
+
+class UserLogin(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+    password: str = Field(min_length=1, max_length=256)
+
+    @field_validator("email")
+    @classmethod
+    def email_must_look_valid(cls, value: str) -> str:
+        return validate_email_for_mvp(value).lower()
+
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: str
+    full_name: str | None
+    created_at: datetime
+    disabled_at: datetime | None
+
+    @field_validator("created_at", "disabled_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime | None) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class AuthOrganizationResponse(OrganizationResponse):
+    role: MembershipRole
+
+
+class AuthUserResponse(BaseModel):
+    user: UserResponse
+    organizations: list[AuthOrganizationResponse]
+
+
+class AuthTokenResponse(AuthUserResponse):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
 
 
 class ApiKeyCreate(BaseModel):

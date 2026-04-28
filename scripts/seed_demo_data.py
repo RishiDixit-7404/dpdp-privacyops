@@ -17,10 +17,13 @@ if str(BACKEND_PATH) not in sys.path:
 
 from app import models  # noqa: E402
 from app.database import SessionLocal, settings  # noqa: E402
+from app.services.auth import hash_password, normalize_email  # noqa: E402
 
 
 DEMO_ORGANIZATION_NAME = "Acme EdTech Demo"
 DEMO_PROJECT_NAME = "Student Learning Platform"
+DEMO_ADMIN_EMAIL = "demo.admin@example.test"
+DEMO_ADMIN_PASSWORD = "demo-password-123"
 DEMO_SCANNER_SCAN_ID = "demo-student-learning-platform-v1"
 DEMO_SOURCE = "demo_student_platform_logs.jsonl"
 DEMO_USER_IDS = ("usr_demo_001", "usr_demo_002", "usr_demo_003", "usr_demo_004")
@@ -185,6 +188,7 @@ def main() -> None:
     print(f"Using database: {settings.database_url}")
     with SessionLocal() as db:
         organization, project, created_project = _get_or_create_demo_project(db)
+        _ensure_demo_user_membership(db, organization)
         scan_created = _ensure_demo_scan(db, project)
         _replace_demo_data_requests(db, project)
         _replace_demo_consent_events(db, project)
@@ -196,6 +200,7 @@ def main() -> None:
         print(f"Project: {project.name} ({project.id})")
         print(f"Project created: {'yes' if created_project else 'no, reused existing project'}")
         print(f"Scanner scan created: {'yes' if scan_created else 'no, reused existing demo scan'}")
+        print(f"Demo login: {DEMO_ADMIN_EMAIL} / {DEMO_ADMIN_PASSWORD}")
         print("")
         print("Demo URLs:")
         print("  Projects:              http://localhost:3000/projects")
@@ -230,6 +235,34 @@ def _get_or_create_demo_project(db: Session) -> tuple[models.Organization, model
     db.add(project)
     db.flush()
     return organization, project, True
+
+
+def _ensure_demo_user_membership(db: Session, organization: models.Organization) -> None:
+    email = normalize_email(DEMO_ADMIN_EMAIL)
+    user = db.scalar(select(models.User).where(models.User.email == email))
+    if user is None:
+        user = models.User(
+            email=email,
+            password_hash=hash_password(DEMO_ADMIN_PASSWORD),
+            full_name="Demo Admin",
+        )
+        db.add(user)
+        db.flush()
+
+    membership = db.scalar(
+        select(models.OrganizationMembership).where(
+            models.OrganizationMembership.user_id == user.id,
+            models.OrganizationMembership.organization_id == organization.id,
+        )
+    )
+    if membership is None:
+        db.add(
+            models.OrganizationMembership(
+                user_id=user.id,
+                organization_id=organization.id,
+                role="owner",
+            )
+        )
 
 
 def _ensure_demo_scan(db: Session, project: models.Project) -> bool:

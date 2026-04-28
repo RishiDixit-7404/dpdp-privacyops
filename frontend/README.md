@@ -4,7 +4,7 @@ Next.js dashboard v0 for the DPDP PrivacyOps data map.
 
 The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, review consent events, and view a technical Evidence Report.
 
-Full user auth is not implemented yet. Consent event writes require project API keys, but this is still a local MVP dashboard.
+The dashboard has minimal local-MVP auth. Users register or log in with email/password, the frontend stores a bearer token locally, and API calls include `Authorization: Bearer <token>`.
 
 ## Setup
 
@@ -41,6 +41,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+Register at `http://localhost:3000/register` or log in at `http://localhost:3000/login`.
+
 ## Local Demo Data
 
 After starting Postgres and running backend migrations, seed the demo project from the repo root:
@@ -66,7 +68,8 @@ DATABASE_URL=postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp python scripts/r
 ## Workflow
 
 1. Run the backend at `http://localhost:8000`.
-2. Run the local scanner and write JSON output:
+2. Register or log in.
+3. Run the local scanner and write JSON output:
 
 ```bash
 dpdp-scanner scan-json \
@@ -74,12 +77,25 @@ dpdp-scanner scan-json \
   --output /tmp/findings_logs.json
 ```
 
-3. Open the dashboard and create a project.
-4. Upload `/tmp/findings_logs.json` from the project detail page.
-5. Review scans, summaries, findings, filters, and masked examples.
-6. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
-7. Open Consent Events from the project page to create an API key, record granted/withdrawn events, and check current status by user and purpose.
-8. Open Evidence Report from the project page to review DPDP readiness evidence and print the report from the browser.
+4. Open the dashboard and create a project.
+5. Upload `/tmp/findings_logs.json` from the project detail page.
+6. Review scans, summaries, findings, filters, and masked examples.
+7. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
+8. Open Consent Events from the project page to create an API key, record granted/withdrawn events, and check current status by user and purpose.
+9. Open Evidence Report from the project page to review DPDP readiness evidence and print the report from the browser.
+
+## Auth
+
+Routes:
+
+```text
+/register
+/login
+```
+
+The dashboard protects non-public routes in the app shell. If no token is present, users are sent to `/login`.
+
+The access token is stored in browser `localStorage` for the local MVP. Scanner uploads, privacy request payloads, consent payloads, raw API keys, password hashes, and API key hashes are not stored in browser storage.
 
 ## DSR Inbox
 
@@ -208,7 +224,7 @@ python scripts/privacy_smoke_check.py
 
 ## Known Demo Limitations
 
-- Full user auth is not implemented yet.
+- Auth is local-MVP only. There is no OAuth, SAML/SSO, MFA, password reset, invitation flow, or role-management UI yet.
 - The dashboard is local-only for the MVP demo.
 - Evidence Report v0 uses browser print-to-PDF; there is no server-side PDF generation.
 - Automatic deletion across systems and email notifications are not implemented.

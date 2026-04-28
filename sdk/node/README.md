@@ -63,7 +63,7 @@ const status = await client.getConsentStatus({
 Authorization: Bearer <apiKey>
 ```
 
-Read calls such as `getConsentStatus` can still be used without `apiKey` in the local MVP.
+`getConsentStatus` can also use the project API key to read the current status for a specific external user and purpose.
 
 ## Privacy Notes
 

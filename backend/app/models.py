@@ -25,10 +25,24 @@ DATA_REQUEST_AUDIT_EVENT_TYPES = (
     "rejected",
 )
 CONSENT_STATUSES = ("granted", "withdrawn")
+MEMBERSHIP_ROLES = ("owner", "admin", "member")
 
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+
+    memberships: Mapped[list[OrganizationMembership]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class Organization(Base):
@@ -39,6 +53,37 @@ class Organization(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     projects: Mapped[list[Project]] = relationship(back_populates="organization", cascade="all, delete-orphan")
+    memberships: Mapped[list[OrganizationMembership]] = relationship(
+        back_populates="organization",
+        cascade="all, delete-orphan",
+    )
+
+
+class OrganizationMembership(Base):
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint("user_id", "organization_id", name="uq_organization_memberships_user_organization"),
+        CheckConstraint("role in ('owner', 'admin', 'member')", name="ck_organization_memberships_role"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="member", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+    user: Mapped[User] = relationship(back_populates="memberships")
+    organization: Mapped[Organization] = relationship(back_populates="memberships")
 
 
 class Project(Base):

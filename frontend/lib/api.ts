@@ -1,6 +1,8 @@
 import type {
   ApiKey,
   ApiKeyCreateResponse,
+  AuthMeResponse,
+  AuthTokenResponse,
   ConsentEvent,
   ConsentEventCreate,
   ConsentEventFilters,
@@ -18,13 +20,16 @@ import type {
   EvidenceReportResponse,
   FindingFilters,
   FindingListResponse,
+  LoginInput,
   Project,
   ProjectCreateInput,
   PublicDataRequestConfirmation,
+  RegisterInput,
   Scan,
   ScanDetail,
   ScannerUploadResponse
 } from "@/lib/types";
+import { getAccessToken } from "@/lib/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -71,11 +76,13 @@ export function apiErrorMessage(error: unknown): string {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
+  const token = getAccessToken();
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init?.headers ?? {})
       }
     });
@@ -107,6 +114,24 @@ function queryString(params: Record<string, string | number | undefined>): strin
 
 export function getProjects(): Promise<Project[]> {
   return request<Project[]>("/projects");
+}
+
+export function registerUser(input: RegisterInput): Promise<AuthTokenResponse> {
+  return request<AuthTokenResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input)
+  });
+}
+
+export function loginUser(input: LoginInput): Promise<AuthTokenResponse> {
+  return request<AuthTokenResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(input)
+  });
+}
+
+export function getCurrentUser(): Promise<AuthMeResponse> {
+  return request<AuthMeResponse>("/auth/me");
 }
 
 export function createProject(input: ProjectCreateInput): Promise<Project> {

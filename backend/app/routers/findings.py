@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app import models
-from app.deps import get_db
+from app.deps import get_current_user, get_db
 from app.schemas import FindingListResponse, FindingResponse, RiskLevel, SourceType
+from app.services.access_control import require_project_access, require_scan_access
 
 
 router = APIRouter(tags=["findings"])
@@ -34,10 +35,9 @@ def list_project_findings(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> FindingListResponse:
-    project = db.get(models.Project, project_id)
-    if project is None:
-        raise HTTPException(status_code=404, detail="Project not found")
+    require_project_access(db, current_user, project_id)
 
     filters = [models.Scan.project_id == project_id]
     if risk_level is not None:
@@ -73,10 +73,9 @@ def list_scan_findings(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> FindingListResponse:
-    scan = db.get(models.Scan, scan_id)
-    if scan is None:
-        raise HTTPException(status_code=404, detail="Scan not found")
+    require_scan_access(db, current_user, scan_id)
 
     total = db.scalar(select(func.count()).select_from(models.Finding).where(models.Finding.scan_id == scan_id)) or 0
     statement = (

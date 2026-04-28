@@ -51,6 +51,42 @@ export interface ProjectCreateInput {
   description?: string | null;
 }
 
+export type MembershipRole = "owner" | "admin" | "member";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  created_at: string;
+  disabled_at: string | null;
+}
+
+export interface AuthOrganization extends Organization {
+  role: MembershipRole;
+}
+
+export interface AuthMeResponse {
+  user: AuthUser;
+  organizations: AuthOrganization[];
+}
+
+export interface AuthTokenResponse extends AuthMeResponse {
+  access_token: string;
+  token_type: "bearer";
+}
+
+export interface RegisterInput {
+  email: string;
+  password: string;
+  full_name?: string | null;
+  organization_name?: string | null;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
 export interface ApiKey {
   id: string;
   project_id: string;

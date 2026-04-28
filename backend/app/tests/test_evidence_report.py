@@ -74,7 +74,7 @@ def get_report(client: TestClient, project_id: str) -> dict[str, object]:
     return response.json()
 
 
-def test_evidence_report_returns_404_for_missing_project(client: TestClient) -> None:
+def test_evidence_report_returns_404_for_missing_project(client: TestClient, project_id: str) -> None:
     response = client.get(f"/projects/{uuid4()}/evidence-report")
 
     assert response.status_code == 404

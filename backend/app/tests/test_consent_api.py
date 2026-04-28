@@ -225,6 +225,20 @@ def test_latest_status_returns_most_recent_event(client: TestClient, project_id:
     assert body["latest_event_id"] == latest["id"]
 
 
+def test_latest_status_accepts_project_api_key(client: TestClient, project_id: str) -> None:
+    api_key = create_api_key(client, project_id)
+    create_consent_event(client, project_id, api_key=api_key, status="granted")
+
+    response = client.get(
+        f"/projects/{project_id}/consent-status",
+        params={"external_user_id": "usr_123", "purpose": "marketing_whatsapp"},
+        headers={"Authorization": f"Bearer {api_key}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["current_status"] == "granted"
+
+
 def test_latest_status_uses_created_at_tie_breaker(client: TestClient, project_id: str) -> None:
     occurred_at = "2026-04-26T10:30:00+05:30"
     create_consent_event(client, project_id, status="granted", occurred_at=occurred_at)

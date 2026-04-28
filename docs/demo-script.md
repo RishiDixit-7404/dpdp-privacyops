@@ -10,6 +10,11 @@ Rahul, as a CTO or founder, the hard part is not writing one privacy policy. The
 
 ## Run Local Scanner / Upload Scanner JSON
 
+Log in with the seeded demo account first:
+
+- email: `demo.admin@example.test`
+- password: `demo-password-123`
+
 Start with the local scanner. It runs inside the customer environment and scans CSV, Postgres metadata, JSON, and JSONL files.
 
 Use this positioning exactly:
@@ -32,7 +37,7 @@ Open User Data Requests. Show access, deletion, grievance, and correction reques
 
 ## Show Consent Events
 
-Open Consent Events. Show the append-only ledger of granted and withdrawn consent events by external user ID and purpose. Check current status for a purpose such as `marketing_whatsapp`. Mention that the Node SDK lets developers record consent events from their product.
+Open Consent Events. Show the append-only ledger of granted and withdrawn consent events by external user ID and purpose. Show that owners/admins can create a project API key for consent writes, and that the raw key is displayed only once. Check current status for a purpose such as `marketing_whatsapp`. Mention that the Node SDK lets developers record consent events from their product using the project API key.
 
 ## Show Evidence Report
 

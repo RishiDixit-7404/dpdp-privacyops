@@ -1,9 +1,10 @@
 from fastapi.testclient import TestClient
 
-from app.tests.conftest import scanner_payload
+from app.tests.conftest import register_and_login, scanner_payload
 
 
 def test_project_creation_works(client: TestClient) -> None:
+    token = register_and_login(client, email="project-create@example.com")
     response = client.post(
         "/projects",
         json={
@@ -11,6 +12,7 @@ def test_project_creation_works(client: TestClient) -> None:
             "project_name": "Customer App",
             "description": "MVP project",
         },
+        headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 201

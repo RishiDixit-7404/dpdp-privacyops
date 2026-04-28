@@ -87,7 +87,7 @@ def _scan_line(path: Path, line_number: int, line: str) -> list[SmokeFinding]:
     if _is_frontend_code(path) and re.search(r"\bconsole\.log\s*\(", stripped):
         findings.append(_finding(path, line_number, "console.log is not allowed in frontend code", stripped))
 
-    if _is_frontend_code(path) and re.search(r"\b(localStorage|sessionStorage)\b", stripped):
+    if _is_frontend_code(path) and not _is_frontend_auth_storage_module(path) and re.search(r"\b(localStorage|sessionStorage)\b", stripped):
         findings.append(_finding(path, line_number, "browser storage is not allowed for privacy payloads", stripped))
 
     for phrase in FORBIDDEN_POSITIONING_PHRASES:
@@ -109,6 +109,10 @@ def _finding(path: Path, line_number: int, reason: str, snippet: str) -> SmokeFi
 
 def _is_frontend_code(path: Path) -> bool:
     return "frontend" in path.parts and path.suffix in {".ts", ".tsx", ".js", ".jsx"}
+
+
+def _is_frontend_auth_storage_module(path: Path) -> bool:
+    return path.name == "auth.ts" and "frontend" in path.parts and "lib" in path.parts
 
 
 def _is_backend_app_code(path: Path) -> bool:

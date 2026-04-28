@@ -177,7 +177,7 @@ def test_invalid_status_rejected(client: TestClient, project_id: str) -> None:
     assert response.status_code == 422
 
 
-def test_project_not_found_returns_404(client: TestClient) -> None:
+def test_project_not_found_returns_404(client: TestClient, project_id: str) -> None:
     missing_project_id = str(uuid4())
 
     response = client.post(f"/projects/{missing_project_id}/data-requests", json=request_payload())
@@ -186,7 +186,7 @@ def test_project_not_found_returns_404(client: TestClient) -> None:
     assert response.json()["detail"] == "Project not found"
 
 
-def test_request_not_found_returns_404(client: TestClient) -> None:
+def test_request_not_found_returns_404(client: TestClient, project_id: str) -> None:
     missing_request_id = str(uuid4())
 
     response = client.get(f"/data-requests/{missing_request_id}")

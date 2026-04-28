@@ -10,9 +10,10 @@ Current stage:
 - **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
 - **Stage 4 Consent Event API v0**: append-only consent event ledger, project API key protection for writes, dashboard view, and Node SDK wrapper.
 - **Stage 5 Evidence Report v0**: JSON-first technical evidence report for scans, findings, DSR workflow, consent events, remediation, and readiness gaps.
+- **Stage 6 local auth v0**: email/password registration and login, bearer tokens, organization memberships, and project-level access control.
 - **MVP demo hardening**: local Postgres verification, deterministic demo seed/reset scripts, privacy smoke checks, and a 3-minute demo script.
 
-This repository does not include full user login/auth, billing, server-side PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
+This repository does not include enterprise auth, OAuth, SAML/SSO, billing, server-side PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
 ## Privacy Guarantee
 
@@ -70,6 +71,11 @@ Then open:
 - Consent events: `http://localhost:3000/projects/<PROJECT_ID>/consent`
 
 The seed script prints the exact project URLs after it runs.
+
+Demo login created by the seed script:
+
+- email: `demo.admin@example.test`
+- password: `demo-password-123`
 
 Helper scripts:
 
@@ -178,6 +184,9 @@ pytest --cov=dpdp_scanner
 The backend lives in `backend/` and provides:
 
 - `GET /health`
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /auth/me`
 - project creation/list/detail APIs
 - scanner JSON upload API at `POST /projects/{project_id}/scans/upload`
 - scan list/detail APIs
@@ -187,6 +196,8 @@ The backend lives in `backend/` and provides:
 - Consent Event APIs for append-only granted/withdrawn events, current status lookup, and event-count summaries
 - Project API key APIs for protecting consent event writes
 - Evidence Report API for DPDP readiness evidence across scans, risk inventory, DSR workflow, consent events, remediation, and gaps
+
+Dashboard/admin APIs require `Authorization: Bearer <ACCESS_TOKEN>`. A user can access projects only through organization membership. Owners/admins can create and revoke project API keys; members can read project data, upload scans, and use the workflow endpoints.
 
 The scanner-to-backend flow is:
 
@@ -266,13 +277,20 @@ npm test
 The dashboard workflow is:
 
 1. Run the FastAPI backend.
-2. Run the scanner and produce a JSON findings file.
-3. Create a project in the dashboard.
-4. Upload scanner JSON from the project page.
-5. Review scans, risk summaries, and filtered findings.
-6. Open User Data Requests to track privacy requests, notes, and audit events.
-7. Open Consent Events to record and verify purpose-based consent events.
-8. Open Evidence Report to review a technical DPDP readiness evidence summary.
+2. Register or log in at `/register` or `/login`.
+3. Run the scanner and produce a JSON findings file.
+4. Create a project in the dashboard.
+5. Upload scanner JSON from the project page.
+6. Review scans, risk summaries, and filtered findings.
+7. Open User Data Requests to track privacy requests, notes, and audit events.
+8. Open Consent Events to create a project API key, then record and verify purpose-based consent events.
+9. Open Evidence Report to review a technical DPDP readiness evidence summary.
+
+Auth routes:
+
+- Register: `/register`
+- Login: `/login`
+- Dashboard routes require a local bearer-token session.
 
 DSR Inbox routes:
 
@@ -336,7 +354,7 @@ curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events \
   }'
 ```
 
-The backend also accepts `X-DPDP-API-Key: <API_KEY>` for consent writes. Revoked keys cannot write events. Read endpoints remain unauthenticated in the local MVP.
+The backend also accepts `X-DPDP-API-Key: <API_KEY>` for consent writes. Revoked keys cannot write events. Consent read/admin endpoints require a logged-in user with project access.
 
 Consent summary counts are event counts in v0, not unique-user counts.
 
@@ -371,7 +389,7 @@ await client.trackConsent({
 });
 ```
 
-`apiKey` is required for SDK write calls such as `trackConsent` and `withdrawConsent`. Read calls such as `getConsentStatus` can still be used without a key in the local MVP.
+`apiKey` is required for SDK write calls such as `trackConsent` and `withdrawConsent`. It is also used by `getConsentStatus` to read the current status for one external user and purpose.
 
 ## Evidence Report v0
 
@@ -482,7 +500,7 @@ docker run --rm \
 
 ## Known Limitations
 
-- no full user login/auth
+- local MVP auth only; no OAuth, SAML/SSO, MFA, invite workflow, or password reset
 - no billing
 - no hosted deployment
 - no server-side PDF generation
@@ -495,7 +513,7 @@ docker run --rm \
 
 - Upgrade Node to current LTS.
 - Upgrade Next.js to a non-vulnerable supported version.
-- Add auth, project-level access control, and API key enforcement.
+- Harden auth with password reset, invitations, role management, MFA/SSO decisions, and production token/session strategy.
 - Add hosted deployment configuration and secret management.
 - Add production database backups, retention controls, and operational monitoring.
 - Add server-side report persistence or export only after the JSON-first workflow is validated.

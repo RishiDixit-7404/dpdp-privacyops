@@ -6,7 +6,7 @@ Date: 2026-04-27
 
 This increment adds project API keys and enforces them on consent event writes.
 
-It does not add full user login, sessions, billing, external integrations, or broader project access control. The API key management endpoints are local-MVP admin endpoints until full user auth is added.
+API key management endpoints now require user authentication and owner/admin project access. This does not add enterprise SSO, billing, or external integrations.
 
 ## Files Changed
 
@@ -32,18 +32,22 @@ It does not add full user login, sessions, billing, external integrations, or br
 - `backend/README.md`: documents backend endpoints and consent write enforcement.
 - `frontend/README.md`: documents dashboard API key management.
 - `docs/RECOVERY_SUMMARY.md`: updated to reflect this increment.
+- `docs/AUTH_AND_ACCESS_CONTROL.md`: documents the later user auth and project access-control layer.
 
 ## Endpoints Added
 
 - `POST /projects/{project_id}/api-keys`
   - Body: `{ "name": "Production consent writer" }`
   - Returns the raw `api_key` only once, plus safe metadata.
+  - Requires owner/admin membership on the project organization.
 - `GET /projects/{project_id}/api-keys`
   - Lists key metadata only.
   - Never returns raw keys or `key_hash`.
+  - Requires owner/admin membership on the project organization.
 - `POST /projects/{project_id}/api-keys/{api_key_id}/revoke`
   - Sets `revoked_at`.
   - Does not delete the key record.
+  - Requires owner/admin membership on the project organization.
 
 ## Enforcement
 
@@ -54,13 +58,17 @@ Authorization: Bearer <api_key>
 X-DPDP-API-Key: <api_key>
 ```
 
-Protected endpoint:
+API-key-protected write endpoint:
 
 - `POST /projects/{project_id}/consent-events`
 
-Unauthenticated, invalid, revoked, or wrong-project keys return `401`.
+The SDK can also use the project API key for:
 
-Successful writes update `last_used_at` on the matching API key. Consent read endpoints remain unauthenticated for the local MVP.
+- `GET /projects/{project_id}/consent-status`
+
+For consent writes, missing, invalid, revoked, or wrong-project API keys return `401`.
+
+Successful writes update `last_used_at` on the matching API key. Consent ledger and summary admin endpoints now require user bearer auth and project membership.
 
 ## Storage Rules
 
@@ -81,7 +89,7 @@ python -m pytest
 Result:
 
 ```text
-120 passed in 37.79s
+131 passed in 27.60s
 ```
 
 Targeted backend run:
@@ -93,7 +101,7 @@ python -m pytest backend/app/tests/test_api_keys.py backend/app/tests/test_conse
 Result:
 
 ```text
-37 passed in 29.87s
+38 passed in 15.23s
 ```
 
 SDK and frontend checks could not run in this shell because `npm` is not available. Attempted commands:
@@ -111,8 +119,7 @@ npm : The term 'npm' is not recognized as the name of a cmdlet, function, script
 
 ## Known Limitations
 
-- This is API-key protection for consent writes, not full user login/auth.
-- API key management endpoints are unauthenticated local-MVP admin endpoints until login and project access control exist.
-- Consent read endpoints remain unauthenticated.
+- This is API-key protection for consent writes, paired with minimal local-MVP user auth for admin/dashboard access.
+- Consent write requests use project API keys, not user bearer tokens.
 - No key rotation workflow beyond create and revoke.
 - No dedicated audit log for API key creation/revocation yet.

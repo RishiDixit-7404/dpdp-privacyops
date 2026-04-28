@@ -1,10 +1,10 @@
 # DPDP PrivacyOps Backend
 
-FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0, Consent Event API v0 with API-key-protected writes, and Evidence Report v0.
+FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes local-MVP user auth, project access control, DSR Inbox v0, Consent Event API v0 with API-key-protected writes, and Evidence Report v0.
 
-It does not include full user login/auth, billing, server-side PDF generation, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
+It does not include enterprise auth, OAuth, SAML/SSO, billing, server-side PDF generation, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
 
-Full user auth is intentionally not implemented yet. Consent event writes require project API keys, but the remaining APIs are the local/backend foundation for the dashboard and should not be exposed publicly without a full auth layer.
+Auth is intentionally minimal. Dashboard/admin APIs require user bearer tokens and project membership; consent event writes require project API keys. Do not expose this backend publicly without production auth/session hardening.
 
 ## Setup
 
@@ -24,6 +24,8 @@ Copy `.env.example` and set:
 - `DATABASE_URL`: SQLAlchemy database URL. Local Postgres example: `postgresql+psycopg://dpdp:dpdp@localhost:5432/dpdp`
 - `APP_ENV`: `development`, `test`, or `production`
 - `CORS_ORIGINS`: comma-separated allowed origins. Local defaults are `http://localhost:3000,http://127.0.0.1:3000`.
+- `AUTH_SECRET_KEY`: signing secret for local bearer tokens. Set a real high-entropy value before shared or hosted use.
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: access token lifetime. Local default is `1440`.
 
 For quick local development without Postgres, the app defaults to `sqlite:///./dpdp_privacyops_dev.db`.
 
@@ -131,6 +133,9 @@ The reset script has a hard guard: it deletes only organizations named `Acme EdT
 ## Endpoint List
 
 - `GET /health`
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /auth/me`
 - `POST /projects`
 - `GET /projects`
 - `GET /projects/{project_id}`
@@ -156,9 +161,25 @@ The reset script has a hard guard: it deletes only organizations named `Acme EdT
 
 ## Create Project
 
+Project APIs require a user bearer token. Register first:
+
+```bash
+curl -X POST http://127.0.0.1:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "founder@example.com",
+    "password": "password-123",
+    "full_name": "Founder",
+    "organization_name": "Acme"
+  }'
+```
+
+Use the returned `access_token`:
+
 ```bash
 curl -X POST http://127.0.0.1:8000/projects \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -d '{
     "organization_name": "Acme",
     "project_name": "Main App",
@@ -223,7 +244,7 @@ Supported query params:
 
 ## DSR Inbox APIs
 
-DSR Inbox v0 uses clearer product wording in the UI: User Data Request or Privacy Request. It tracks request workflow and evidence only. Auth, identity verification automation, email notifications, and automatic deletion across systems are intentionally not implemented yet.
+DSR Inbox v0 uses clearer product wording in the UI: User Data Request or Privacy Request. It tracks request workflow and evidence only. Identity verification automation, email notifications, and automatic deletion across systems are intentionally not implemented yet.
 
 Request types:
 
@@ -312,7 +333,7 @@ curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/api-keys \
   -d '{"name":"Production consent writer"}'
 ```
 
-Use the returned key with `Authorization: Bearer <API_KEY>` or `X-DPDP-API-Key: <API_KEY>` when creating consent events. Revoked keys cannot write events. Read endpoints remain unauthenticated in the local MVP.
+Use the returned key with `Authorization: Bearer <API_KEY>` or `X-DPDP-API-Key: <API_KEY>` when creating consent events. Revoked keys cannot write events. The current-status endpoint can also accept the project API key for SDK use. Consent ledger and summary admin endpoints require user bearer auth.
 
 Consent event statuses:
 
@@ -360,7 +381,7 @@ Consent summary counts are event counts in v0, not unique-user counts.
 
 Privacy rule: consent events use `external_user_id` only. The API does not ask for email, phone, or name. Optional metadata is capped at 10KB.
 
-Full user login/auth is intentionally not implemented yet. API key enforcement currently protects consent event writes only.
+User auth is intentionally minimal and local-MVP oriented. API key enforcement protects consent event writes; user bearer auth protects dashboard/admin endpoints.
 
 ## Evidence Report API
 

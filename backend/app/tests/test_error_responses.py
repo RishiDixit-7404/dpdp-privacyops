@@ -16,7 +16,7 @@ def assert_json_error_without_raw_pii(response, expected_status: int) -> None:
     assert RAW_ERROR_VALUE not in response.text
 
 
-def test_project_not_found_on_upload_returns_404_json(client: TestClient) -> None:
+def test_project_not_found_on_upload_returns_404_json(client: TestClient, project_id: str) -> None:
     payload = scanner_payload()
     payload["source"] = RAW_ERROR_VALUE
 
@@ -56,7 +56,7 @@ def test_invalid_finding_filter_enum_returns_sanitized_422_json(client: TestClie
     assert_json_error_without_raw_pii(response, 422)
 
 
-def test_scan_not_found_returns_404_json(client: TestClient) -> None:
+def test_scan_not_found_returns_404_json(client: TestClient, project_id: str) -> None:
     response = client.get(f"/scans/{uuid4()}")
 
     assert response.status_code == 404
@@ -64,7 +64,7 @@ def test_scan_not_found_returns_404_json(client: TestClient) -> None:
     assert response.json()["detail"] == "Scan not found"
 
 
-def test_project_not_found_returns_404_json(client: TestClient) -> None:
+def test_project_not_found_returns_404_json(client: TestClient, project_id: str) -> None:
     response = client.get(f"/projects/{uuid4()}")
 
     assert response.status_code == 404

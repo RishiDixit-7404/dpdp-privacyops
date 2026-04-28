@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import api_keys, consent, data_requests, findings, health, projects, reports, scans
+from app.routers import api_keys, auth, consent, data_requests, findings, health, projects, reports, scans
 
 
 settings = get_settings()
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(api_keys.router)
 app.include_router(scans.router)

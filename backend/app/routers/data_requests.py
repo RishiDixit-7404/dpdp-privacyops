@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import models
-from app.deps import get_db
+from app.deps import get_current_user, get_db
 from app.schemas import (
     DataRequestAuditEventResponse,
     DataRequestCreate,
@@ -22,6 +22,7 @@ from app.schemas import (
     DataRequestUpdate,
     PublicDataRequestConfirmation,
 )
+from app.services.access_control import require_data_request_access, require_project_access
 
 
 router = APIRouter(tags=["data requests"])
@@ -101,7 +102,9 @@ def create_data_request(
     project_id: UUID,
     payload: DataRequestCreate,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> models.DataRequest:
+    require_project_access(db, current_user, project_id)
     return _create_data_request(db, project_id, payload)
 
 
@@ -127,8 +130,9 @@ def list_project_data_requests(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> DataRequestListResponse:
-    _get_project_or_404(db, project_id)
+    require_project_access(db, current_user, project_id)
 
     filters = [models.DataRequest.project_id == project_id]
     if status is not None:
@@ -154,7 +158,12 @@ def list_project_data_requests(
 
 
 @router.get("/data-requests/{request_id}", response_model=DataRequestDetailResponse)
-def get_data_request(request_id: UUID, db: Session = Depends(get_db)) -> models.DataRequest:
+def get_data_request(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+) -> models.DataRequest:
+    require_data_request_access(db, current_user, request_id)
     return _get_data_request_or_404(db, request_id)
 
 
@@ -163,7 +172,9 @@ def update_data_request(
     request_id: UUID,
     payload: DataRequestUpdate,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> models.DataRequest:
+    require_data_request_access(db, current_user, request_id)
     data_request = _get_data_request_or_404(db, request_id)
     changes = payload.model_dump(exclude_unset=True)
 
@@ -221,7 +232,9 @@ def add_data_request_note(
     request_id: UUID,
     payload: DataRequestNoteCreate,
     db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ) -> models.DataRequestNote:
+    require_data_request_access(db, current_user, request_id)
     data_request = _get_data_request_or_404(db, request_id)
     note = models.DataRequestNote(
         data_request_id=data_request.id,

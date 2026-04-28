@@ -33,7 +33,7 @@ Recovery date: 2026-04-27
 - Backend framework: FastAPI with Uvicorn.
 - Database: SQLAlchemy-supported database, default SQLite for quick local development, Postgres 16 for local Docker/dev.
 - ORM / migrations: SQLAlchemy 2.x ORM and Alembic migrations in `backend/alembic`.
-- Auth approach: project API keys now protect consent event writes. Full user login, sessions, and project-level user access control are still not implemented.
+- Auth approach: minimal local-MVP email/password auth now protects dashboard/admin APIs with bearer tokens and organization memberships. Project API keys still protect consent event writes.
 - Job queue: none detected.
 - Scanner language/runtime: Python 3.11+, Typer CLI, pandas, pydantic, psycopg.
 - Report generation: backend generates JSON-first evidence report on demand; frontend renders it and uses browser `window.print()` for print-to-PDF. No server-side PDF generation.
@@ -96,7 +96,7 @@ Tests were inspected but not executed during this recovery pass, to avoid instal
 | DSR Inbox | partially complete | Backend CRUD/workflow APIs and frontend inbox/detail/public intake exist. Identity verification automation, auth, email, and automatic deletion are intentionally missing. |
 | Consent Event API | partially complete | Append-only backend API, current status, summaries, frontend ledger, Node SDK, and API key enforcement for writes exist. Full preference-center/cookie-banner capabilities are missing. |
 | Evidence Report | partially complete | Backend builds report JSON on demand and frontend renders sections with browser print. No persisted report records or server-side PDF generation. |
-| Auth / organisations / projects | partially complete | Organizations and projects exist in models/APIs/UI. Auth and project-level access control are missing. |
+| Auth / organisations / projects | partially complete | Users, organization memberships, project access checks, login/register, and protected dashboard APIs exist. Enterprise auth, invites, password reset, and role-management UI are missing. |
 | Scan upload flow | complete | Backend `POST /projects/{project_id}/scans/upload` validates scanner contract and stores scans/findings; frontend uploads scanner JSON. |
 | Findings table | complete | Backend findings APIs support filters/pagination; frontend table shows risk, PII type, source, field, confidence, masked examples, and suggested action. |
 | Risk scoring | complete | Scanner risk scoring exists in `scanner/dpdp_scanner/risk.py`, with tests covering scanner behavior. |
@@ -107,7 +107,7 @@ Tests were inspected but not executed during this recovery pass, to avoid instal
 
 ## Missing Modules / Known Gaps
 
-- Authentication, login, sessions, users, and project-level access control.
+- Enterprise auth, OAuth/SAML/SSO, MFA, password reset, invitations, and role-management UI.
 - Broader API key coverage beyond consent writes.
 - Billing.
 - Hosted deployment configuration beyond local Postgres and scanner Docker image.
@@ -301,7 +301,7 @@ bash scripts/demo_local.sh
 
 ## Known Blockers
 
-- No full user auth or project-level access control exists. Consent writes now require project API keys, but the app should remain local-only until login/auth is implemented.
+- Auth is local-MVP only. Consent writes require project API keys, dashboard/admin APIs require user bearer tokens, but the app should remain local-only until production auth/session hardening is done.
 - Next.js version is old and documented as needing upgrade before hosted/customer-facing deployment.
 - Full local verification was not run during this recovery pass because the requested scope was safe inspection and documentation only.
 - Any Postgres migration/test verification requires Docker and local database startup.
@@ -309,7 +309,7 @@ bash scripts/demo_local.sh
 
 ## Likely Next Build Step
 
-The next highest-value build step is to add full auth and project-level access control around the existing project workflows and API key management endpoints, because consent writes are now API-key protected but admin access is still local-MVP only.
+The next highest-value build step is to harden auth for real team use: invitations, role management UI, password reset, production token/session strategy, and deployment secret handling.
 
 Before that feature work, run the existing verification matrix once on the recovered machine:
 
@@ -325,12 +325,12 @@ python scripts/privacy_smoke_check.py
 ```text
 You are working on the DPDP PrivacyOps repo. Read docs/RECOVERY_SUMMARY.md first. Do not refactor broadly.
 
-Goal: add a minimal local-MVP user auth and project access-control foundation.
+Goal: harden the local-MVP auth foundation for team usage.
 
 Tasks:
 1. Inspect backend models, routers, tests, and frontend API usage.
-2. Propose a small auth/API-key design that fits the existing FastAPI + SQLAlchemy + Alembic stack.
-3. Implement only the first safe increment: authenticated admin access for project API key management and project views, with tests and docs.
+2. Propose a small invitation and role-management design that fits the existing FastAPI + SQLAlchemy + Alembic stack.
+3. Implement only the first safe increment: owner/admin can invite users to an organization and assign member/admin roles, with tests and docs.
 4. Do not add billing, hosted deployment, or unrelated UI redesign.
 5. Run the relevant tests and report exact commands/results.
 ```

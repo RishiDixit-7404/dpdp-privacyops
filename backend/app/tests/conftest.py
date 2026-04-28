@@ -64,6 +64,8 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
 @pytest.fixture()
 def project_id(client: TestClient) -> str:
+    token = register_and_login(client)
+    client.headers.update({"Authorization": f"Bearer {token}"})
     response = client.post(
         "/projects",
         json={
@@ -74,6 +76,25 @@ def project_id(client: TestClient) -> str:
     )
     assert response.status_code == 201
     return response.json()["id"]
+
+
+def register_and_login(
+    client: TestClient,
+    *,
+    email: str = "owner@example.com",
+    password: str = "password-123",
+    organization_name: str | None = None,
+) -> str:
+    payload: dict[str, object] = {
+        "email": email,
+        "password": password,
+        "full_name": "Test Owner",
+    }
+    if organization_name is not None:
+        payload["organization_name"] = organization_name
+    response = client.post("/auth/register", json=payload)
+    assert response.status_code == 201
+    return str(response.json()["access_token"])
 
 
 def scanner_payload(scan_id: str = "scanner-scan-001") -> dict[str, object]:
