@@ -399,3 +399,54 @@ class ConsentSummaryResponse(BaseModel):
     granted_count: int
     withdrawn_count: int
     purposes: list[ConsentPurposeSummary]
+
+
+class EvidenceReportProject(BaseModel):
+    id: UUID
+    name: str
+    organization_name: str
+
+
+class EvidenceReportSystem(BaseModel):
+    name: str
+    source_type: SourceType
+    finding_count: int
+    high_or_critical_count: int
+
+
+class EvidenceReportDataCategory(BaseModel):
+    pii_type: str
+    finding_count: int
+    highest_risk_level: RiskLevel
+
+
+class EvidenceReportTopRisk(BaseModel):
+    source_name: str
+    table_or_file: str
+    field_name: str
+    pii_type: str
+    risk_level: RiskLevel
+    confidence_score: float
+    masked_examples: list[str]
+    suggested_action: str
+
+
+class EvidenceReportReadiness(BaseModel):
+    status: str
+    summary: str
+    metrics: dict[str, int]
+
+
+class EvidenceReportResponse(BaseModel):
+    project: EvidenceReportProject
+    generated_at: datetime
+    trust_positioning: str
+    evidence_scope: str
+    systems_scanned: list[EvidenceReportSystem]
+    data_categories: list[EvidenceReportDataCategory]
+    top_risks: list[EvidenceReportTopRisk]
+    dsr_readiness: EvidenceReportReadiness
+    consent_readiness: EvidenceReportReadiness
+    remediation_gaps: list[str]
+    technical_evidence_language: str
+    legal_certification_disclaimer: str

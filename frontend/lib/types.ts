@@ -256,3 +256,54 @@ export interface ConsentSummaryResponse {
   withdrawn_count: number;
   purposes: ConsentPurposeSummary[];
 }
+
+export interface EvidenceReportProject {
+  id: string;
+  name: string;
+  organization_name: string;
+}
+
+export interface EvidenceReportSystem {
+  name: string;
+  source_type: SourceType;
+  finding_count: number;
+  high_or_critical_count: number;
+}
+
+export interface EvidenceReportDataCategory {
+  pii_type: string;
+  finding_count: number;
+  highest_risk_level: RiskLevel;
+}
+
+export interface EvidenceReportTopRisk {
+  source_name: string;
+  table_or_file: string;
+  field_name: string;
+  pii_type: string;
+  risk_level: RiskLevel;
+  confidence_score: number;
+  masked_examples: string[];
+  suggested_action: string;
+}
+
+export interface EvidenceReportReadiness {
+  status: string;
+  summary: string;
+  metrics: Record<string, number>;
+}
+
+export interface EvidenceReport {
+  project: EvidenceReportProject;
+  generated_at: string;
+  trust_positioning: string;
+  evidence_scope: string;
+  systems_scanned: EvidenceReportSystem[];
+  data_categories: EvidenceReportDataCategory[];
+  top_risks: EvidenceReportTopRisk[];
+  dsr_readiness: EvidenceReportReadiness;
+  consent_readiness: EvidenceReportReadiness;
+  remediation_gaps: string[];
+  technical_evidence_language: string;
+  legal_certification_disclaimer: string;
+}

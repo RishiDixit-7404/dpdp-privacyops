@@ -1,8 +1,8 @@
 # DPDP PrivacyOps Backend
 
-FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0 and Consent Event API v0.
+FastAPI backend foundation for DPDP PrivacyOps. This service accepts local scanner JSON output, validates the privacy contract, stores scans and findings, and exposes APIs for the dashboard. It also includes DSR Inbox v0, Consent Event API v0, and Evidence Report v0.
 
-It does not include auth, billing, evidence reports, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
+It does not include auth, billing, evidence report PDF generation, automatic deletion across systems, cookie banners, email notifications, external integrations, or frontend code.
 
 Auth is intentionally not implemented yet. These APIs are the local/backend foundation for the upcoming dashboard and should not be exposed publicly without an auth layer.
 
@@ -117,6 +117,7 @@ When `BACKEND_TEST_DATABASE_URL` is set, the test suite creates and drops the ap
 - `GET /projects/{project_id}/consent-events`
 - `GET /projects/{project_id}/consent-status`
 - `GET /projects/{project_id}/consent-summary`
+- `GET /projects/{project_id}/evidence-report`
 
 ## Create Project
 
@@ -212,9 +213,9 @@ curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/data-requests \
   -H "Content-Type: application/json" \
   -d '{
     "request_type": "access",
-    "requester_name": "Rahul Sharma",
-    "requester_email": "rahul@example.com",
-    "requester_identifier": "usr_123",
+    "requester_name": null,
+    "requester_email": "r***@example.com",
+    "requester_identifier": "student_****",
     "request_details": "Please send me a copy of my data."
   }'
 ```
@@ -255,7 +256,7 @@ curl -X POST http://127.0.0.1:8000/public/projects/<PROJECT_ID>/data-requests \
   -H "Content-Type: application/json" \
   -d '{
     "request_type": "deletion",
-    "requester_email": "rahul@example.com",
+    "requester_email": "r***@example.com",
     "request_details": "Please delete my account data."
   }'
 ```
@@ -277,7 +278,7 @@ Record a consent event:
 curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events \
   -H "Content-Type: application/json" \
   -d '{
-    "external_user_id": "usr_123",
+    "external_user_id": "student_****",
     "purpose": "marketing_whatsapp",
     "status": "granted",
     "notice_version": "v2.1",
@@ -293,13 +294,13 @@ curl -X POST http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events \
 List events:
 
 ```bash
-curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events?external_user_id=usr_123&purpose=marketing_whatsapp&status=granted&limit=100&offset=0"
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-events?external_user_id=student_****&purpose=marketing_whatsapp&status=granted&limit=100&offset=0"
 ```
 
 Check current consent status:
 
 ```bash
-curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-status?external_user_id=usr_123&purpose=marketing_whatsapp"
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/consent-status?external_user_id=student_****&purpose=marketing_whatsapp"
 ```
 
 Get admin summary:
@@ -314,6 +315,16 @@ Privacy rule: consent events use `external_user_id` only. The API does not ask f
 
 Auth and API key enforcement are intentionally not implemented yet.
 
+## Evidence Report API
+
+Evidence Report v0 summarizes existing technical evidence for a project:
+
+```bash
+curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/evidence-report"
+```
+
+The response includes systems scanned, data categories, top risks, DSR readiness, consent readiness, remediation gaps, and a clear non-certification disclaimer. Evidence reports are technical readiness evidence only; they are not legal certification.
+
 ## Error Responses
 
 Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
@@ -324,5 +335,7 @@ Errors are JSON and avoid echoing submitted scanner values. Expected statuses:
 - missing consent status: `404`
 
 ## Privacy Notes
+
+We do not want your raw personal data. The scanner runs inside your environment and sends only metadata, masked examples, confidence scores, and risk tags.
 
 The backend stores scanner metadata and masked examples only for scanner uploads. Consent events are keyed by `external_user_id` and purpose; no raw email, phone, or name fields are required. It does not call external APIs, does not send telemetry, and does not log raw scanner or request payload values.

@@ -32,7 +32,7 @@ const client = new DpdpPrivacyOpsClient({
 });
 
 await client.trackConsent({
-  externalUserId: "usr_123",
+  externalUserId: "student_****",
   purpose: "marketing_whatsapp",
   noticeVersion: "v2.1",
   source: "web_signup",
@@ -43,14 +43,14 @@ await client.trackConsent({
 });
 
 await client.withdrawConsent({
-  externalUserId: "usr_123",
+  externalUserId: "student_****",
   purpose: "marketing_whatsapp",
   noticeVersion: "v2.1",
   source: "account_settings"
 });
 
 const status = await client.getConsentStatus({
-  externalUserId: "usr_123",
+  externalUserId: "student_****",
   purpose: "marketing_whatsapp"
 });
 ```
@@ -58,6 +58,8 @@ const status = await client.getConsentStatus({
 `occurredAt` is optional. If omitted, the SDK sends the current time. A JavaScript `Date` is serialized to an ISO string.
 
 ## Privacy Notes
+
+We do not want your raw personal data. The scanner runs inside your environment and sends only metadata, masked examples, confidence scores, and risk tags.
 
 - Use `externalUserId`; do not send email, phone, or name.
 - The SDK does not persist data in files, browser storage, or process-level caches.
