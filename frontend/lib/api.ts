@@ -13,6 +13,7 @@ import type {
   DataRequestNote,
   DataRequestNoteCreateInput,
   DataRequestUpdateInput,
+  EvidenceReport,
   FindingFilters,
   FindingListResponse,
   Project,
@@ -246,4 +247,8 @@ export function getConsentStatus(
 
 export function getConsentSummary(projectId: string): Promise<ConsentSummaryResponse> {
   return request<ConsentSummaryResponse>(`/projects/${projectId}/consent-summary`);
+}
+
+export function getEvidenceReport(projectId: string): Promise<EvidenceReport> {
+  return request<EvidenceReport>(`/projects/${projectId}/evidence-report`);
 }

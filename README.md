@@ -9,16 +9,78 @@ Current stage:
 - **Stage 2 dashboard v0**: Next.js local dashboard for projects, scanner uploads, scans, findings, and filters.
 - **Stage 3 DSR Inbox v0**: User Data Request tracking for access, correction, deletion, consent withdrawal, and grievance workflows.
 - **Stage 4 Consent Event API v0**: append-only consent event ledger, dashboard view, and Node SDK wrapper.
+- **Stage 5 Evidence Report v0**: technical readiness evidence summary from scanner metadata, DSR records, and consent events.
+- **Stage 6 local demo hardening**: deterministic local seed data and smoke checks for the MVP flow.
 
 This repository does not include auth, billing, evidence report PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
 ## Privacy Guarantee
 
-The scanner runs inside your environment and does not upload raw personal data. It inspects local files or Postgres metadata, masks examples before writing output, and emits structured JSON findings only.
+We do not want your raw personal data. The scanner runs inside your environment and sends only metadata, masked examples, confidence scores, and risk tags.
+
+The scanner inspects local files or Postgres metadata, masks examples before writing output, and emits structured JSON findings only.
 
 No external APIs, telemetry, or network uploads are used by the scanner.
 
 The output contract sets `raw_pii_uploaded` to `false`. Pydantic validation rejects any scanner result that tries to set it to `true`.
+
+Evidence reports are technical readiness evidence for product and engineering teams. They are not legal certification, and raw PII should not be uploaded by default.
+
+## Local MVP Demo
+
+Expected local URLs:
+
+- Backend API: `http://localhost:8000`
+- Backend docs: `http://localhost:8000/docs`
+- Frontend: `http://localhost:3000`
+
+Backend setup:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+cd backend
+python -m pip install -e ".[dev]"
+```
+
+Database setup and migration:
+
+```bash
+cd backend
+python -m alembic upgrade head
+```
+
+Demo seed:
+
+```bash
+cd ..
+python scripts/seed_demo.py
+```
+
+Backend run:
+
+```bash
+cd backend
+python -m uvicorn app.main:app --reload
+```
+
+Frontend setup and run:
+
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+
+Smoke test, with the backend running:
+
+```bash
+cd ..
+bash scripts/smoke_demo.sh
+```
+
+The seed creates `Acme EdTech` / `Learno AI Tutor` with masked scanner examples, DSR workflow records, consent events, and an evidence report. The seed is safe to run more than once because it resets only its fixed demo rows before recreating them.
 
 ## Install Locally
 
@@ -108,6 +170,7 @@ The backend lives in `backend/` and provides:
 - paginated findings responses for dashboard tables
 - DSR Inbox APIs for User Data Requests, notes, and audit events
 - Consent Event APIs for append-only granted/withdrawn events, current status lookup, and event-count summaries
+- Evidence Report API for technical readiness evidence
 
 The scanner-to-backend flow is:
 
@@ -186,6 +249,7 @@ The dashboard workflow is:
 4. Upload scanner JSON from the project page.
 5. Review scans, risk summaries, and filtered findings.
 6. Open User Data Requests to track privacy requests, notes, and audit events.
+7. Open Evidence Report to review technical readiness evidence and remediation gaps.
 
 DSR Inbox routes:
 
@@ -196,6 +260,15 @@ DSR Inbox routes:
 Request types are `access`, `correction`, `deletion`, `consent_withdrawal`, and `grievance`. Statuses are `new`, `verifying`, `in_progress`, `completed`, and `rejected`.
 
 DSR Inbox v0 is workflow tracking only. It does not implement auth, automatic deletion, email notifications, identity verification automation, or evidence report PDF generation.
+
+## Evidence Report
+
+Evidence Report v0 is available at:
+
+- Backend: `GET /projects/{project_id}/evidence-report`
+- Dashboard: `/projects/<PROJECT_ID>/evidence-report`
+
+It summarizes systems scanned, data categories, top risks, DSR readiness, consent readiness, and remediation gaps from existing local metadata. It is technical readiness evidence only and is not legal certification.
 
 ## Consent Event API
 
@@ -239,7 +312,7 @@ const client = new DpdpPrivacyOpsClient({
 });
 
 await client.trackConsent({
-  externalUserId: "usr_123",
+  externalUserId: "student_****",
   purpose: "marketing_whatsapp",
   noticeVersion: "v2.1",
   source: "web_signup"

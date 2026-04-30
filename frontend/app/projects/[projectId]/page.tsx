@@ -92,6 +92,9 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
           <Link href={`/projects/${params.projectId}/requests`}>
             <Button variant="secondary">User Data Requests</Button>
           </Link>
+          <Link href={`/projects/${params.projectId}/evidence-report`}>
+            <Button variant="secondary">Evidence Report</Button>
+          </Link>
           <Link href="#findings">
             <Button variant="secondary">View findings inventory</Button>
           </Link>
@@ -108,6 +111,19 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
           </div>
           <Link href={`/projects/${params.projectId}/requests`}>
             <Button>Open request inbox</Button>
+          </Link>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Evidence Report</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="text-sm text-muted-foreground">
+            Generate technical readiness evidence from scanner findings, request workflow records, and consent events.
+          </div>
+          <Link href={`/projects/${params.projectId}/evidence-report`}>
+            <Button>Open evidence report</Button>
           </Link>
         </CardContent>
       </Card>

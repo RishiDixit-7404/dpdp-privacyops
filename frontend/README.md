@@ -2,7 +2,7 @@
 
 Next.js dashboard v0 for the DPDP PrivacyOps data map.
 
-The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, and review consent events.
+The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, review consent events, and open a technical evidence report.
 
 Auth is not implemented yet. This is a local MVP dashboard.
 
@@ -55,6 +55,7 @@ dpdp-scanner scan-json \
 5. Review scans, summaries, findings, filters, and masked examples.
 6. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
 7. Open Consent Events from the project page to record granted/withdrawn events and check current status by user and purpose.
+8. Open Evidence Report from the project page to review systems scanned, data categories, top risks, readiness summaries, and remediation gaps.
 
 ## DSR Inbox
 
@@ -118,6 +119,16 @@ Consent Event API v0 is an event ledger and developer API. It is not a cookie ba
 
 Privacy rule: the consent form asks for `external_user_id` only. It does not ask for email, phone, or name.
 
+## Evidence Report
+
+Dashboard route:
+
+```text
+/projects/<PROJECT_ID>/evidence-report
+```
+
+Evidence Report v0 is technical readiness evidence from existing scanner metadata, User Data Request records, and consent events. It is not legal certification.
+
 ## Commands
 
 ```bash
@@ -128,6 +139,8 @@ npm run lint
 ```
 
 ## Privacy Notes
+
+We do not want your raw personal data. The scanner runs inside your environment and sends only metadata, masked examples, confidence scores, and risk tags.
 
 - Uploaded scanner JSON is parsed client-side only for upload.
 - The dashboard does not display raw uploaded JSON.
