@@ -118,6 +118,12 @@ When `BACKEND_TEST_DATABASE_URL` is set, the test suite creates and drops the ap
 - `GET /projects/{project_id}/consent-status`
 - `GET /projects/{project_id}/consent-summary`
 - `GET /projects/{project_id}/evidence-report`
+- `GET /api/readiness-scans`
+- `POST /api/readiness-scans`
+- `GET /api/readiness-scans/{scan_id}`
+- `PATCH /api/readiness-scans/{scan_id}`
+- `POST /api/readiness-scans/{scan_id}/checklist`
+- `GET /api/readiness-scans/{scan_id}/summary`
 
 ## Create Project
 
@@ -324,6 +330,33 @@ curl "http://127.0.0.1:8000/projects/<PROJECT_ID>/evidence-report"
 ```
 
 The response includes systems scanned, data categories, top risks, DSR readiness, consent readiness, remediation gaps, and a clear non-certification disclaimer. Evidence reports are technical readiness evidence only; they are not legal certification.
+
+## Paid Technical Readiness Scan Workflow
+
+Readiness Scan APIs track the Rs. 9,999 one-time DPDP Technical Readiness Scan package. They do not implement payment, billing, subscription management, or legal certification.
+
+Ask customers for safe inputs only: schema dump without data, masked CSV/sample exports, masked log samples, privacy notice link/text, third-party tools list, and masked AI prompt/log samples if relevant. Do not enter raw production data, raw Aadhaar, PAN, phone numbers, emails, student names, secrets, or live identifiers.
+
+Create a readiness scan:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/readiness-scans \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "<PROJECT_ID>",
+    "customer_name": "Acme EdTech",
+    "customer_segment": "edtech",
+    "notes": "Demo readiness scan using masked metadata and synthetic findings."
+  }'
+```
+
+Get the operational summary:
+
+```bash
+curl "http://127.0.0.1:8000/api/readiness-scans/<SCAN_ID>/summary"
+```
+
+The summary returns checklist progress, finding counts, high/critical risk counts, DSR request count, consent event count, evidence report availability, and the next recommended action.
 
 ## Error Responses
 

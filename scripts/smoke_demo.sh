@@ -80,3 +80,14 @@ expect 'Technical readiness evidence' "$evidence" "evidence report technical sco
 expect 'not legal certification' "$evidence" "evidence report disclaimer"
 expect 'systems_scanned' "$evidence" "evidence report systems scanned"
 expect 'remediation_gaps' "$evidence" "evidence report remediation gaps"
+
+readiness="$TMP_DIR/readiness.json"
+fetch "$API_BASE_URL/api/readiness-scans" "$readiness"
+expect 'DPDP Technical Readiness Scan' "$readiness" "readiness scan package exists"
+expect 'Acme EdTech' "$readiness" "readiness scan customer exists"
+expect '"price_inr":9999' "$readiness" "readiness scan price exists"
+
+summary="$TMP_DIR/readiness-summary.json"
+fetch "$API_BASE_URL/api/readiness-scans/88888888-8888-4888-8888-888888888888/summary" "$summary"
+expect 'Schedule 30-minute walkthrough' "$summary" "readiness scan summary next action"
+expect '"checklist_completion_percentage":100' "$summary" "readiness scan checklist complete"

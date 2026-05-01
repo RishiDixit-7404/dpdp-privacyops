@@ -13,6 +13,16 @@ export type DataRequestAuditEventType =
   | "completed"
   | "rejected";
 export type ConsentStatus = "granted" | "withdrawn";
+export type CustomerSegment = "edtech" | "healthtech" | "hrtech" | "ai_saas" | "b2b_saas" | "other";
+export type ReadinessScanStatus =
+  | "draft"
+  | "inputs_requested"
+  | "inputs_received"
+  | "scanning"
+  | "report_ready"
+  | "walkthrough_done"
+  | "converted_to_subscription"
+  | "closed_lost";
 
 export type PiiType =
   | "email"
@@ -306,4 +316,71 @@ export interface EvidenceReport {
   remediation_gaps: string[];
   technical_evidence_language: string;
   legal_certification_disclaimer: string;
+}
+
+export interface ReadinessScanChecklist {
+  schema_dump: boolean;
+  masked_csv_exports: boolean;
+  log_samples: boolean;
+  privacy_notice: boolean;
+  third_party_tools: boolean;
+  ai_prompt_samples: boolean;
+}
+
+export type ReadinessScanChecklistUpdate = Partial<ReadinessScanChecklist>;
+
+export interface ReadinessScan {
+  id: string;
+  project_id: string;
+  customer_name: string;
+  customer_segment: CustomerSegment;
+  package_name: string;
+  price_inr: number;
+  status: ReadinessScanStatus;
+  input_checklist: ReadinessScanChecklist;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReadinessScanCreateInput {
+  project_id: string;
+  customer_name: string;
+  customer_segment: CustomerSegment;
+  package_name?: string;
+  price_inr?: number;
+  status?: ReadinessScanStatus;
+  input_checklist?: ReadinessScanChecklist;
+  notes?: string | null;
+}
+
+export interface ReadinessScanUpdateInput {
+  customer_name?: string;
+  customer_segment?: CustomerSegment;
+  package_name?: string;
+  price_inr?: number;
+  status?: ReadinessScanStatus;
+  input_checklist?: ReadinessScanChecklist;
+  notes?: string | null;
+}
+
+export interface ReadinessScanProjectSummary {
+  id: string;
+  name: string;
+  organization_name: string;
+}
+
+export interface ReadinessScanSummary {
+  scan_id: string;
+  package_name: string;
+  price_inr: number;
+  status: ReadinessScanStatus;
+  checklist_completion_percentage: number;
+  linked_project: ReadinessScanProjectSummary;
+  finding_count: number;
+  high_or_critical_risk_count: number;
+  dsr_request_count: number;
+  consent_event_count: number;
+  evidence_report_available: boolean;
+  next_recommended_action: string;
 }
