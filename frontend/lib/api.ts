@@ -19,6 +19,11 @@ import type {
   Project,
   ProjectCreateInput,
   PublicDataRequestConfirmation,
+  ReadinessScan,
+  ReadinessScanChecklistUpdate,
+  ReadinessScanCreateInput,
+  ReadinessScanSummary,
+  ReadinessScanUpdateInput,
   Scan,
   ScanDetail,
   ScannerUploadResponse
@@ -251,4 +256,36 @@ export function getConsentSummary(projectId: string): Promise<ConsentSummaryResp
 
 export function getEvidenceReport(projectId: string): Promise<EvidenceReport> {
   return request<EvidenceReport>(`/projects/${projectId}/evidence-report`);
+}
+
+export function getReadinessScans(): Promise<ReadinessScan[]> {
+  return request<ReadinessScan[]>("/api/readiness-scans");
+}
+
+export function createReadinessScan(payload: ReadinessScanCreateInput): Promise<ReadinessScan> {
+  return request<ReadinessScan>("/api/readiness-scans", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateReadinessScan(scanId: string, payload: ReadinessScanUpdateInput): Promise<ReadinessScan> {
+  return request<ReadinessScan>(`/api/readiness-scans/${scanId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateReadinessScanChecklist(
+  scanId: string,
+  payload: ReadinessScanChecklistUpdate
+): Promise<ReadinessScan> {
+  return request<ReadinessScan>(`/api/readiness-scans/${scanId}/checklist`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function getReadinessScanSummary(scanId: string): Promise<ReadinessScanSummary> {
+  return request<ReadinessScanSummary>(`/api/readiness-scans/${scanId}/summary`);
 }

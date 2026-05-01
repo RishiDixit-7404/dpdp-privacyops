@@ -8,6 +8,10 @@ from uuid import UUID
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = ROOT / "backend"
+VENV_PYTHON = ROOT / ".venv" / "bin" / "python"
+if VENV_PYTHON.exists() and Path(sys.executable).absolute() != VENV_PYTHON.absolute():
+    os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), str(Path(__file__).resolve()), *sys.argv[1:]])
+
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{BACKEND_DIR / 'dpdp_privacyops_dev.db'}")
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
@@ -22,6 +26,7 @@ SCAN_ID = UUID("33333333-3333-4333-8333-333333333333")
 ACCESS_REQUEST_ID = UUID("44444444-4444-4444-8444-444444444444")
 DELETION_REQUEST_ID = UUID("55555555-5555-4555-8555-555555555555")
 GRIEVANCE_REQUEST_ID = UUID("66666666-6666-4666-8666-666666666666")
+READINESS_SCAN_ID = UUID("88888888-8888-4888-8888-888888888888")
 CONSENT_EVENT_IDS = [
     UUID("77777777-7777-4777-8777-777777777771"),
     UUID("77777777-7777-4777-8777-777777777772"),
@@ -60,6 +65,7 @@ def main() -> None:
         _seed_scan(db)
         _seed_data_requests(db)
         _seed_consent_events(db)
+        _seed_readiness_scan(db)
         db.commit()
     finally:
         db.close()
@@ -82,6 +88,10 @@ def _reset_demo_rows(db) -> None:
     scan = db.get(models.Scan, SCAN_ID)
     if scan is not None:
         db.delete(scan)
+
+    readiness_scan = db.get(models.ReadinessScan, READINESS_SCAN_ID)
+    if readiness_scan is not None:
+        db.delete(readiness_scan)
     db.flush()
 
 
@@ -270,6 +280,31 @@ def _seed_consent_events(db) -> None:
                 created_at=occurred_at,
             )
         )
+
+
+def _seed_readiness_scan(db) -> None:
+    db.add(
+        models.ReadinessScan(
+            id=READINESS_SCAN_ID,
+            project_id=PROJECT_ID,
+            customer_name="Acme EdTech",
+            customer_segment="edtech",
+            package_name="DPDP Technical Readiness Scan",
+            price_inr=9999,
+            status="report_ready",
+            input_checklist={
+                "schema_dump": True,
+                "masked_csv_exports": True,
+                "log_samples": True,
+                "privacy_notice": True,
+                "third_party_tools": True,
+                "ai_prompt_samples": True,
+            },
+            notes="Demo readiness scan using masked metadata and synthetic findings.",
+            created_at=GENERATED_AT + timedelta(minutes=90),
+            updated_at=GENERATED_AT + timedelta(minutes=90),
+        )
+    )
 
 
 if __name__ == "__main__":

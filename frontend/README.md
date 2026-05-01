@@ -2,7 +2,7 @@
 
 Next.js dashboard v0 for the DPDP PrivacyOps data map.
 
-The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, review consent events, and open a technical evidence report.
+The dashboard lets a local user create projects, upload scanner JSON output, view scans, inspect findings, filter the personal-data inventory, track User Data Requests, review consent events, open a technical evidence report, and manage paid readiness scan packages.
 
 Auth is not implemented yet. This is a local MVP dashboard.
 
@@ -56,6 +56,7 @@ dpdp-scanner scan-json \
 6. Open User Data Requests from the project page to create, filter, update, and evidence privacy requests.
 7. Open Consent Events from the project page to record granted/withdrawn events and check current status by user and purpose.
 8. Open Evidence Report from the project page to review systems scanned, data categories, top risks, readiness summaries, and remediation gaps.
+9. Open Readiness Scans to show the Rs. 9,999 package, safe-input checklist, summary metrics, and next action.
 
 ## DSR Inbox
 
@@ -128,6 +129,18 @@ Dashboard route:
 ```
 
 Evidence Report v0 is technical readiness evidence from existing scanner metadata, User Data Request records, and consent events. It is not legal certification.
+
+## Paid Technical Readiness Scan Workflow
+
+Dashboard route:
+
+```text
+/readiness-scans
+```
+
+Use this page to create and track a Rs. 9,999 one-time DPDP Technical Readiness Scan. Ask for safe inputs only: schema dump without data, masked CSV/sample exports, masked log samples, privacy notice link/text, third-party tools list, and masked AI prompt/log samples if relevant. Do not ask for raw production data or live identifiers.
+
+The page shows checklist progress, high/critical finding count, DSR and consent evidence counts, evidence report links, and the next operational action. This is technical readiness evidence, not legal certification.
 
 ## Commands
 

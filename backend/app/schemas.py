@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Literal
@@ -65,6 +66,34 @@ class ConsentStatus(StrEnum):
     withdrawn = "withdrawn"
 
 
+class CustomerSegment(StrEnum):
+    edtech = "edtech"
+    healthtech = "healthtech"
+    hrtech = "hrtech"
+    ai_saas = "ai_saas"
+    b2b_saas = "b2b_saas"
+    other = "other"
+
+
+class ReadinessScanStatus(StrEnum):
+    draft = "draft"
+    inputs_requested = "inputs_requested"
+    inputs_received = "inputs_received"
+    scanning = "scanning"
+    report_ready = "report_ready"
+    walkthrough_done = "walkthrough_done"
+    converted_to_subscription = "converted_to_subscription"
+    closed_lost = "closed_lost"
+
+
+RAW_PII_PATTERNS = (
+    re.compile(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b"),
+    re.compile(r"\b[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}\b"),
+    re.compile(r"\b(?:\+91[ -]?)?[6-9][0-9]{9}\b"),
+    re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
+)
+
+
 def validate_email_for_mvp(value: str) -> str:
     normalized = value.strip()
     if not normalized or "@" not in normalized:
@@ -79,6 +108,15 @@ def ensure_timezone_aware(value: datetime | None) -> datetime | None:
     if value is not None and (value.tzinfo is None or value.utcoffset() is None):
         return value.replace(tzinfo=timezone.utc)
     return value
+
+
+def reject_obvious_raw_pii(value: str | None, field_name: str) -> str | None:
+    if value is None:
+        return value
+    normalized = value.strip()
+    if any(pattern.search(normalized) for pattern in RAW_PII_PATTERNS):
+        raise ValueError(f"{field_name} must not contain raw personal data")
+    return normalized
 
 
 class OrganizationResponse(BaseModel):
@@ -450,3 +488,126 @@ class EvidenceReportResponse(BaseModel):
     remediation_gaps: list[str]
     technical_evidence_language: str
     legal_certification_disclaimer: str
+
+
+class ReadinessScanChecklist(BaseModel):
+    schema_dump: bool = False
+    masked_csv_exports: bool = False
+    log_samples: bool = False
+    privacy_notice: bool = False
+    third_party_tools: bool = False
+    ai_prompt_samples: bool = False
+
+
+class ReadinessScanChecklistUpdate(BaseModel):
+    schema_dump: bool | None = None
+    masked_csv_exports: bool | None = None
+    log_samples: bool | None = None
+    privacy_notice: bool | None = None
+    third_party_tools: bool | None = None
+    ai_prompt_samples: bool | None = None
+
+
+class ReadinessScanCreate(BaseModel):
+    project_id: UUID
+    customer_name: str = Field(min_length=1, max_length=255)
+    customer_segment: CustomerSegment
+    package_name: str = Field(default="DPDP Technical Readiness Scan", min_length=1, max_length=255)
+    price_inr: int = Field(default=9999, ge=0)
+    status: ReadinessScanStatus = ReadinessScanStatus.draft
+    input_checklist: ReadinessScanChecklist = Field(default_factory=ReadinessScanChecklist)
+    notes: str | None = Field(default=None, max_length=5000)
+
+    @field_validator("customer_name")
+    @classmethod
+    def customer_name_must_be_safe(cls, value: str) -> str:
+        normalized = reject_obvious_raw_pii(value, "customer_name")
+        if not normalized:
+            raise ValueError("customer_name cannot be empty")
+        return normalized
+
+    @field_validator("package_name")
+    @classmethod
+    def package_name_must_be_safe(cls, value: str) -> str:
+        normalized = reject_obvious_raw_pii(value, "package_name")
+        if not normalized:
+            raise ValueError("package_name cannot be empty")
+        return normalized
+
+    @field_validator("notes")
+    @classmethod
+    def notes_must_be_safe(cls, value: str | None) -> str | None:
+        return reject_obvious_raw_pii(value, "notes")
+
+
+class ReadinessScanUpdate(BaseModel):
+    customer_name: str | None = Field(default=None, min_length=1, max_length=255)
+    customer_segment: CustomerSegment | None = None
+    package_name: str | None = Field(default=None, min_length=1, max_length=255)
+    price_inr: int | None = Field(default=None, ge=0)
+    status: ReadinessScanStatus | None = None
+    input_checklist: ReadinessScanChecklist | None = None
+    notes: str | None = Field(default=None, max_length=5000)
+
+    @field_validator("customer_name")
+    @classmethod
+    def customer_name_must_be_safe(cls, value: str | None) -> str | None:
+        normalized = reject_obvious_raw_pii(value, "customer_name")
+        if value is not None and not normalized:
+            raise ValueError("customer_name cannot be empty")
+        return normalized
+
+    @field_validator("package_name")
+    @classmethod
+    def package_name_must_be_safe(cls, value: str | None) -> str | None:
+        normalized = reject_obvious_raw_pii(value, "package_name")
+        if value is not None and not normalized:
+            raise ValueError("package_name cannot be empty")
+        return normalized
+
+    @field_validator("notes")
+    @classmethod
+    def notes_must_be_safe(cls, value: str | None) -> str | None:
+        return reject_obvious_raw_pii(value, "notes")
+
+
+class ReadinessScanResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    project_id: UUID
+    customer_name: str
+    customer_segment: CustomerSegment
+    package_name: str
+    price_inr: int
+    status: ReadinessScanStatus
+    input_checklist: ReadinessScanChecklist
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def datetimes_must_be_timezone_aware(cls, value: datetime) -> datetime | None:
+        return ensure_timezone_aware(value)
+
+
+class ReadinessScanProjectSummary(BaseModel):
+    id: UUID
+    name: str
+    organization_name: str
+
+
+class ReadinessScanSummaryResponse(BaseModel):
+    scan_id: UUID
+    package_name: str
+    price_inr: int
+    status: ReadinessScanStatus
+    checklist_completion_percentage: int
+    linked_project: ReadinessScanProjectSummary
+    finding_count: int
+    high_or_critical_risk_count: int
+    dsr_request_count: int
+    consent_event_count: int
+    evidence_report_available: bool
+    next_recommended_action: str

@@ -11,6 +11,7 @@ Current stage:
 - **Stage 4 Consent Event API v0**: append-only consent event ledger, dashboard view, and Node SDK wrapper.
 - **Stage 5 Evidence Report v0**: technical readiness evidence summary from scanner metadata, DSR records, and consent events.
 - **Stage 6 local demo hardening**: deterministic local seed data and smoke checks for the MVP flow.
+- **Stage 7 Paid Technical Readiness Scan workflow**: founder-led Rs. 9,999 scan package tracking without payment or billing logic.
 
 This repository does not include auth, billing, evidence report PDF generation, external integrations, automatic deletion across systems, cookie banners, legal notice generation, email notifications, or deployment complexity yet.
 
@@ -80,7 +81,34 @@ cd ..
 bash scripts/smoke_demo.sh
 ```
 
-The seed creates `Acme EdTech` / `Learno AI Tutor` with masked scanner examples, DSR workflow records, consent events, and an evidence report. The seed is safe to run more than once because it resets only its fixed demo rows before recreating them.
+The seed creates `Acme EdTech` / `Learno AI Tutor` with masked scanner examples, DSR workflow records, consent events, a readiness scan package, and an evidence report. The seed is safe to run more than once because it resets only its fixed demo rows before recreating them.
+
+## Paid Technical Readiness Scan Workflow
+
+The first paid motion is a Rs. 9,999 one-time DPDP Technical Readiness Scan. It is an operational workflow for founder-led delivery, not billing, payments, or subscription management.
+
+Safe customer inputs to ask for:
+
+- schema dump without data
+- masked CSV/sample exports
+- log samples with PII masked
+- privacy policy or notice link/text
+- list of third-party tools
+- masked AI prompt/log sample if relevant
+
+Do not ask for raw production data, raw Aadhaar, PAN, phone numbers, emails, student names, secrets, or live identifiers.
+
+In the product, open `/readiness-scans`, create a readiness scan linked to a project, track the safe-input checklist, run/import scanner findings, and open the evidence report. For the local demo, run `python scripts/seed_demo.py`, start the backend, then run `bash scripts/smoke_demo.sh`.
+
+Demo walkthrough:
+
+- "We start with a Rs. 9,999 technical readiness scan."
+- "We do not need production data."
+- "The scanner runs locally in your environment."
+- "The output is a personal-data inventory, risk map, DSR/consent gap review, and evidence report."
+- "If this becomes recurring, the customer moves to monthly monitoring."
+
+This is technical readiness evidence, not legal certification.
 
 ## Install Locally
 
@@ -171,6 +199,7 @@ The backend lives in `backend/` and provides:
 - DSR Inbox APIs for User Data Requests, notes, and audit events
 - Consent Event APIs for append-only granted/withdrawn events, current status lookup, and event-count summaries
 - Evidence Report API for technical readiness evidence
+- Readiness Scan APIs for the paid technical scan workflow
 
 The scanner-to-backend flow is:
 
@@ -250,6 +279,7 @@ The dashboard workflow is:
 5. Review scans, risk summaries, and filtered findings.
 6. Open User Data Requests to track privacy requests, notes, and audit events.
 7. Open Evidence Report to review technical readiness evidence and remediation gaps.
+8. Open Readiness Scans to show the Rs. 9,999 paid scan package, checklist progress, and next action.
 
 DSR Inbox routes:
 
