@@ -81,6 +81,12 @@ cd ..
 bash scripts/smoke_demo.sh
 ```
 
+Screenshot readiness check, with backend and frontend running:
+
+```bash
+bash scripts/demo_check.sh
+```
+
 The seed creates `Acme EdTech` / `Learno AI Tutor` with masked scanner examples, DSR workflow records, consent events, a readiness scan package, and an evidence report. The seed is safe to run more than once because it resets only its fixed demo rows before recreating them.
 
 ## Paid Technical Readiness Scan Workflow
@@ -109,6 +115,27 @@ Demo walkthrough:
 - "If this becomes recurring, the customer moves to monthly monitoring."
 
 This is technical readiness evidence, not legal certification.
+
+## Founder Sales Workflow
+
+Sales/demo docs:
+
+- [Founder Sales Pack](docs/sales/FOUNDER_SALES_PACK.md)
+- [Outreach Templates](docs/sales/OUTREACH_TEMPLATES.md)
+- [Demo Script](docs/sales/DEMO_SCRIPT.md)
+- [Screenshot Checklist](docs/sales/SCREENSHOT_CHECKLIST.md)
+- [Paid Scan Deliverable Template](docs/sales/PAID_SCAN_DELIVERABLE_TEMPLATE.md)
+
+Founder-led workflow:
+
+1. Run the local demo.
+2. Capture screenshots with `bash scripts/demo_check.sh` as the pre-check.
+3. Send outreach using the founder/CTO templates.
+4. Book a demo.
+5. Sell the Rs. 9,999 DPDP Technical Readiness Scan.
+6. Collect safe inputs only.
+7. Generate evidence/report material from scanner metadata and workflow review.
+8. Convert to monthly monitoring when the team wants recurring readiness evidence.
 
 ## Install Locally
 

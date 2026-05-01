@@ -51,6 +51,14 @@ cd ..
 bash scripts/smoke_demo.sh
 ```
 
+## 7a. Screenshot Readiness Check
+
+With backend and frontend running:
+
+```bash
+bash scripts/demo_check.sh
+```
+
 ## 8. Open URLs
 
 - Backend docs: http://localhost:8000/docs
@@ -85,3 +93,22 @@ bash scripts/smoke_demo.sh
 - Run `python scripts/seed_demo.py`, start the backend, then run `bash scripts/smoke_demo.sh`.
 - Walk through readiness scan, project dashboard, findings, DSR inbox, consent events, and evidence report.
 - This is technical readiness evidence, not legal certification.
+
+## Founder Sales Workflow
+
+- Run local demo.
+- Capture screenshots after `bash scripts/demo_check.sh` passes.
+- Send outreach.
+- Book demo.
+- Sell Rs. 9,999 scan.
+- Collect safe inputs.
+- Generate evidence/report.
+- Convert to monthly monitoring.
+
+## Sales Docs
+
+- [Founder Sales Pack](sales/FOUNDER_SALES_PACK.md)
+- [Outreach Templates](sales/OUTREACH_TEMPLATES.md)
+- [Demo Script](sales/DEMO_SCRIPT.md)
+- [Screenshot Checklist](sales/SCREENSHOT_CHECKLIST.md)
+- [Paid Scan Deliverable Template](sales/PAID_SCAN_DELIVERABLE_TEMPLATE.md)
