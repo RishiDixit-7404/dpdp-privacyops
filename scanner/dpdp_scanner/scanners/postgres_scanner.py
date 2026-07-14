@@ -54,9 +54,9 @@ def scan_postgres_metadata(database_url: str) -> ScanResult:
                     source_name=source,
                     table_or_file=table_ref,
                     field_name=str(column_name),
-                    pii_type=detection.pii_type,
+                    pii_type=detection.pii_type,  # type: ignore
                     confidence_score=detection.confidence_score,
-                    risk_level=risk_level,
+                    risk_level=risk_level,  # type: ignore
                     detection_method="column_name",
                     masked_examples=[],
                     sample_count=0,

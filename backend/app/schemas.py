@@ -512,8 +512,8 @@ class ReadinessScanCreate(BaseModel):
     project_id: UUID
     customer_name: str = Field(min_length=1, max_length=255)
     customer_segment: CustomerSegment
-    package_name: str = Field(default="DPDP Technical Readiness Scan", min_length=1, max_length=255)
-    price_inr: int = Field(default=9999, ge=0)
+    package_name: str = Field(min_length=1, max_length=255)
+    price_inr: int = Field(ge=0)
     status: ReadinessScanStatus = ReadinessScanStatus.draft
     input_checklist: ReadinessScanChecklist = Field(default_factory=ReadinessScanChecklist)
     notes: str | None = Field(default=None, max_length=5000)

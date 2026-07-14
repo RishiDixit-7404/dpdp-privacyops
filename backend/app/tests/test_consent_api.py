@@ -27,7 +27,7 @@ def consent_payload(
     }
 
 
-def create_consent_event(client: TestClient, project_id: str, **kwargs: object) -> dict[str, object]:
+def create_consent_event(client: TestClient, project_id: str, **kwargs: str) -> dict[str, object]:
     response = client.post(f"/projects/{project_id}/consent-events", json=consent_payload(**kwargs))
     assert response.status_code == 201
     return response.json()

@@ -28,8 +28,8 @@ def test_project_not_found_on_upload_returns_404_json(client: TestClient) -> Non
 
 def test_invalid_scanner_payload_returns_sanitized_422_json(client: TestClient, project_id: str) -> None:
     payload = scanner_payload()
-    payload["findings"][0]["confidence_score"] = 1.5
-    payload["findings"][0]["masked_examples"] = [RAW_ERROR_VALUE]
+    payload["findings"][0]["confidence_score"] = 1.5  # type: ignore
+    payload["findings"][0]["masked_examples"] = [RAW_ERROR_VALUE]  # type: ignore
 
     response = client.post(f"/projects/{project_id}/scans/upload", json=payload)
 

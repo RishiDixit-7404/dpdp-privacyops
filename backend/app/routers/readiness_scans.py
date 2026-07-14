@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Mapping
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -46,7 +47,7 @@ def _get_readiness_scan_or_404(db: Session, scan_id: UUID) -> models.ReadinessSc
     return readiness_scan
 
 
-def _normalized_checklist(value: dict[str, object] | None) -> dict[str, bool]:
+def _normalized_checklist(value: Mapping[str, object] | None) -> dict[str, bool]:
     checklist = models.readiness_scan_checklist_defaults()
     if value:
         for key in CHECKLIST_KEYS:
@@ -216,21 +217,21 @@ def _next_recommended_action(
     high_or_critical_count: int,
 ) -> str:
     if status in {ReadinessScanStatus.draft, ReadinessScanStatus.inputs_requested}:
-        return "Request safe customer inputs"
+        return "Gather system inputs"
     if completion_percentage < 100:
-        return "Request safe customer inputs"
+        return "Gather system inputs"
     if status == ReadinessScanStatus.inputs_received:
         return "Run local scanner"
     if finding_count == 0:
         return "Run local scanner"
     if status == ReadinessScanStatus.report_ready:
-        return "Schedule 30-minute walkthrough"
+        return "Review evidence report"
     if status == ReadinessScanStatus.scanning or high_or_critical_count > 0:
         return "Review high-risk findings"
     if status == ReadinessScanStatus.walkthrough_done:
-        return "Ask customer to convert to monthly monitoring"
+        return "Transition to monitoring phase"
     if status == ReadinessScanStatus.converted_to_subscription:
-        return "Move customer into monthly monitoring"
+        return "Monitoring active"
     if status == ReadinessScanStatus.closed_lost:
-        return "No action unless customer reopens the scan"
+        return "Scan closed"
     return "Generate evidence report"

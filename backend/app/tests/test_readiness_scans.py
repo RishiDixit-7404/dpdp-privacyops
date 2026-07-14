@@ -10,6 +10,8 @@ def readiness_scan_payload(project_id: str, **overrides: object) -> dict[str, ob
         "project_id": project_id,
         "customer_name": "Acme EdTech",
         "customer_segment": "edtech",
+        "package_name": "DPDP Technical Readiness Scan",
+        "price_inr": 9999,
         "notes": "Demo readiness scan using masked metadata and synthetic findings.",
     }
     payload.update(overrides)
@@ -22,7 +24,7 @@ def create_readiness_scan(client: TestClient, project_id: str, **overrides: obje
     return response.json()
 
 
-def test_create_readiness_scan_defaults_price_and_checklist(client: TestClient, project_id: str) -> None:
+def test_create_readiness_scan_defaults_checklist(client: TestClient, project_id: str) -> None:
     response = client.post("/api/readiness-scans", json=readiness_scan_payload(project_id))
 
     assert response.status_code == 201
@@ -155,7 +157,7 @@ def test_summary_computation(client: TestClient, project_id: str) -> None:
     assert body["dsr_request_count"] == 1
     assert body["consent_event_count"] == 1
     assert body["evidence_report_available"] is True
-    assert body["next_recommended_action"] == "Schedule 30-minute walkthrough"
+    assert body["next_recommended_action"] == "Review evidence report"
 
 
 def test_readiness_scan_does_not_require_raw_pii(client: TestClient, project_id: str) -> None:

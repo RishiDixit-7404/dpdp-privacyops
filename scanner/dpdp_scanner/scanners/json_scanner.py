@@ -161,10 +161,10 @@ def _findings_for_paths(values_by_path: dict[str, list[str]], source_name: str) 
                     source_name=source_name,
                     table_or_file=source_name,
                     field_name=field_path,
-                    pii_type=pii_type,
+                    pii_type=pii_type,  # type: ignore
                     confidence_score=confidence_score,
-                    risk_level=risk_level,
-                    detection_method=detection_method,
+                    risk_level=risk_level,  # type: ignore
+                    detection_method=detection_method,  # type: ignore
                     masked_examples=masked_examples,
                     sample_count=sample_count,
                     match_count=match_count,

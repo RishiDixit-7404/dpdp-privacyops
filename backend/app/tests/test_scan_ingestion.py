@@ -73,7 +73,7 @@ def test_duplicate_scanner_scan_id_returns_409(client: TestClient, project_id: s
 
 def test_masked_examples_max_three_validation(client: TestClient, project_id: str) -> None:
     payload = scanner_payload()
-    payload["findings"][0]["masked_examples"] = ["one", "two", "three", "four"]
+    payload["findings"][0]["masked_examples"] = ["one", "two", "three", "four"]  # type: ignore
 
     response = client.post(f"/projects/{project_id}/scans/upload", json=payload)
 
@@ -82,7 +82,7 @@ def test_masked_examples_max_three_validation(client: TestClient, project_id: st
 
 def test_invalid_confidence_score_rejected(client: TestClient, project_id: str) -> None:
     payload = scanner_payload()
-    payload["findings"][0]["confidence_score"] = 1.1
+    payload["findings"][0]["confidence_score"] = 1.1  # type: ignore
 
     response = client.post(f"/projects/{project_id}/scans/upload", json=payload)
 
@@ -91,7 +91,7 @@ def test_invalid_confidence_score_rejected(client: TestClient, project_id: str) 
 
 def test_invalid_risk_level_rejected(client: TestClient, project_id: str) -> None:
     payload = scanner_payload()
-    payload["findings"][0]["risk_level"] = "severe"
+    payload["findings"][0]["risk_level"] = "severe"  # type: ignore
 
     response = client.post(f"/projects/{project_id}/scans/upload", json=payload)
 
